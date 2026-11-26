@@ -2404,7 +2404,7 @@
                   const disposeSeat = ctx.slots.register(
                     {
                       name: 'conversation.input.model',
-                      priority: -1,
+                      priority: -2,
                       order: 0,
                       locale: NS,
                       inject: (sessionId) => {
