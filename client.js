@@ -1250,22 +1250,23 @@
         if (!available || !directory) return null;
 
         const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
-        const renderName = (group, model, placement, selected) =>
-          renderSlot(
+        const renderName = (group, model, placement, selected) => {
+          const badge = model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(resolveText, model.badge.text)) : null;
+          const fallback = h(
+            'span',
+            { className: 'dsc-mrow-name', title: model.name },
+            placement === 'trigger' ? badge : null,
+            h('span', null, model.name),
+            placement === 'trigger' ? null : badge,
+          );
+          // 座位运行时只在条目声明了 children 时才提供 renderSlot；未声明时直接用兜底。
+          if (typeof renderSlot !== 'function') return fallback;
+          return renderSlot(
             'conversation.input.model.label',
             { provider: { id: group.id, name: providerName(group) }, model, placement, selected },
-            {
-              fallback: model.badge === undefined
-                ? h('span', { className: 'dsc-mrow-name', title: model.name }, model.name)
-                : h(
-                    'span',
-                    { className: 'dsc-mrow-name', title: model.name },
-                    placement === 'trigger' ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(resolveText, model.badge.text)) : null,
-                    h('span', null, model.name),
-                    placement === 'trigger' ? null : h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(resolveText, model.badge.text)),
-                  ),
-            },
+            { fallback },
           );
+        };
 
         const submit = (selection) => {
           void Promise.resolve(select(selection)).then((result) => {
