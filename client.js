@@ -215,7 +215,11 @@
     '.dsc-capsule-count{flex:none;font-size:12px;line-height:16px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary)}',
     '@container (max-width:420px){.dsc-capsule-label{display:none}}',
     // ---- 头像堆叠 ----
-    '.dsc-stack{display:inline-flex;align-items:center;height:16px}',
+    // width:auto + justify-content:flex-start 是必须的：堆叠元素同时带着
+    // .dsc-capsule-icon 的 width:16px/justify-content:center，会把 40~60px 的头像
+    // 行居中溢出 16px 盒子，左半直接逃出胶囊左缘（子代理超过 3 个、溢出指示器
+    // 出现时最明显——已踩坑）。
+    '.dsc-stack{display:inline-flex;align-items:center;height:16px;width:auto;justify-content:flex-start}',
     '.dsc-stack-slot{position:relative;flex:none;width:12px;height:16px}',
     '.dsc-stack-slot:last-child{width:16px}',
     '.dsc-stack-slot>.dsc-face{position:absolute;left:0;top:0}',
