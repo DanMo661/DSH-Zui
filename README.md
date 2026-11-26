@@ -1,13 +1,13 @@
-# dsh-pulse
+# DSH-Zui
 
-[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 插件：把输入框上方那块待办面板，换成一行 ZCode 风格的**状态胶囊**（DSH Pulse——会话的脉搏）。
+[DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 插件：把输入框上方那块待办面板，换成一行 ZCode 风格的**状态胶囊**，并把 composer 的模型选择器换成 ZCode 风格双栏面板 + 思考强度滑杆。
 
 ```
         ╭──────────────────╮   ╭────────────────────────╮
         │ ☑ 处理中      2/5 │   │ 😀😀😀 ···  已完成   32 │
         ╰──────────────────╯   ╰────────────────────────╯
 ┌──────────────────────────────────────────────────────────────┐
-│  给模型发消息…                                                │
+│  给模型发消息…                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -17,11 +17,16 @@ stacked subagent avatars (`Done 32`). Click either one to open the todo list, th
 just-finished subagents and background jobs, and drill into the subagent / workflow directories.
 
 It also replaces the composer's **model picker** with a ZCode-style two-pane selector
-(provider column · model list with vision badges · reasoning-effort pills), riding the same
-shared per-session directory as DSH's own `/model` popup, and re-renders the timeline's
-**turn-trigger badges** (team messages, subagent settlements) with each sender's colored
-agent face — in team sessions every 「收到任务消息 / 子智能体已完成任务」 badge now shows
-who it came from.
+(provider column · model list with vision badges · a ZCode **thought-effort slider** with the
+gradient / bubbles / level-stop animations), riding the same shared per-session directory as
+DSH's own `/model` popup, plus the **agent-team switch** at the bottom of the panel; and it
+re-renders the timeline's **turn-trigger badges** (team messages, subagent settlements) with
+each sender's colored agent face — in team sessions every 「收到任务消息 / 子智能体已完成任务」
+badge now shows who it came from.
+
+> **ZCode 开源移植声明**：本项目的模型选择双栏面板、思考强度滑杆（渐变、气泡流动、档位圆点、白色滑块）、
+> 子智能体头像九色板与状态动画均改编自智谱开源的 ZCode
+> （[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0），在此致谢。
 
 ## 它长什么样
 
@@ -29,7 +34,7 @@ who it came from.
 | --- | --- | --- |
 | 左侧胶囊 | `处理中 2/5`（标签按状态是 处理中 / 待处理 / 已完成） | 完整待办列表：已完成划线、进行中是旋转弧线、未开始是空心圆；打开时自动滚到进行中的那一项 |
 | 右侧胶囊 | 最多 3 枚子智能体头像 + `···`（还有更多时）+ `活跃中 3` / `已完成 32` | **常驻名册**：运行中的子智能体（耗时 + 停止）、后台任务（耗时 + 两击停止）、已结束的子智能体（保留显示），全部完成时顶部显示各类用量小结，底部是 `子智能体目录 32 ›` 和 `工作流目录 1 ›` |
-| 模型座位 | `GLM-5.3-Flash · Max`（替换自带的「选择模型」） | ZCode 风格双栏：左列 provider、右列模型（视觉徽标 + 搜索），底部推理等级分档；底部同时保留官方扩展项（含 **智能体团队协作** 开关）。与 `/model` 弹窗共享同一份会话目录状态，两边即时同步 |
+| 模型座位 | `GLM-5.3-Flash · Max`（替换自带的「选择模型」） | ZCode 风格双栏：左列 provider（名称 + 模型数）、右列模型（视觉徽标），底部是 ZCode 思考强度滑杆（推理等级：当前档位名 + 渐变滑杆，最高档气泡流动；GLM FlashX/Highspeed 走蓝→紫变体）和**智能体团队协作**开关。与 `/model` 弹窗共享同一份会话目录状态，两边即时同步 |
 | 时间线触发标记 | `收到任务消息` / `子智能体已完成任务` 等回合触发徽标 | 每条带上发送者的九色头像脸与会话名，可展开看原始消息 |
 | 子智能体目录 | 当前会话的直接子智能体，可逐层展开嵌套目录 | 点一行跳到那个子会话 |
 | 工作流目录 | 本会话的工作流运行：名称、状态、成员进度 | 只读 |
@@ -52,13 +57,13 @@ who it came from.
 ### 方式 A：让 DSH 会话里的 Agent 装
 
 ```
-请用 plugin_manager 的 install_bundle 安装 https://github.com/DanMo661/dsh-pulse
+请用 plugin_manager 的 install_bundle 安装 https://github.com/DanMo661/DSH-Zui
 ```
 
 ### 方式 B：`dsh` CLI（GitHub）
 
 ```bash
-dsh plugin --profile <你的 profile> add github:DanMo661/dsh-pulse
+dsh plugin --profile <你的 profile> add github:DanMo661/DSH-Zui
 ```
 
 ### 方式 C：`dsh` CLI（本地目录）
@@ -129,5 +134,6 @@ priority** 注册，于是干净地遮蔽内置面板。这个机制用 DSH 自�
 
 MIT，见 [LICENSE](LICENSE)。
 
-子智能体头像与状态胶囊的视觉设计改编自 ZCode（[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0），
-详见 [NOTICE.md](NOTICE.md)。
+模型选择双栏面板、思考强度滑杆（含渐变/气泡/档位动画）、子智能体头像九色板与状态胶囊的视觉设计
+改编自 ZCode（[zai-org/ZCode](https://github.com/zai-org/ZCode)，Apache-2.0），
+详见 [NOTICE.md](NOTICE.md)。包名 `dsh-pulse` 是历史安装标识（npm/bundle id），展示名为 DSH-Zui。
