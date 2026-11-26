@@ -2280,7 +2280,7 @@
       // ------------------------------------------------------------------
 
       return {
-        inject: ['slots', 'sessions', 'remote', 'uiWorkspace', 'locale'],
+        inject: ['slots', 'sessions', 'remote', 'uiWorkspace', 'locale', 'modelDirectories'],
         apply(ctx) {
           let lang = 'zh';
           try {
