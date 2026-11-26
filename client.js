@@ -1166,8 +1166,8 @@
       // ------------------------------------------------------------------
 
       const EMPTY_DIRECTORY = { current: null, groups: [], failures: [], status: 'idle', pending: null, error: null };
-      // 诊断（模型座位接管失败排查用）：注册状态机直接显示在 dock 行，UIA 可读。
-      const SEAT_DEBUG = { state: 'idle', detail: '' };
+      // 诊断（模型座位接管失败排查用）：账本状态直接显示在 dock 行，UIA 可读。
+      const SEAT_DEBUG = { state: 'idle', detail: '', ledger: '' };
 
       /** 目录的 provider 排序：账号最前、官方次之，其余保持目录顺序（与宿主一致）。 */
       function orderProviders(groups) {
@@ -2156,6 +2156,7 @@
             'aria-label': t('refresh.title'),
             onClick: reload,
           }, ICON.refresh()),
+          h('span', { key: 'seatdebug', className: 'dsc-seatdebug' }, '座:' + SEAT_DEBUG.state + ' ' + SEAT_DEBUG.ledger + (SEAT_DEBUG.detail ? ' !' + SEAT_DEBUG.detail.slice(0, 60) : '')),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -2383,12 +2384,24 @@
           const setupModelServices = (models, sessions) => {
             dockServices = { models, sessions };
             mount(currentJobs);
+            // 账本诊断：座位键的弃用事件 + 双视图（赢家/全量）实时进 dock 行。
+            try {
+              if (typeof ctx.slots.onEntryError === 'function') {
+                ctx.slots.onEntryError((key, registration, error, info) => {
+                  if (String(key).indexOf('conversation.input.model') < 0) return;
+                  SEAT_DEBUG.state = info && info.abdicated ? 'abdicated' : 'entry-error';
+                  SEAT_DEBUG.detail = String(error && error.message || error).slice(0, 90);
+                });
+              }
+            } catch (diagError) {
+              /* 诊断失败不影响主流程 */
+            }
             const mountModelSeat = () => {
               ctx.slots.inject('conversation.input.model', () => {
                 try {
                   // 不写 id：与宿主条目同样由系统生成 id → 落进同一个选举格，
                   // priority -1 即可压过宿主（若写不同 id，会各自成格、宿主先注册先赢）。
-                  return ctx.slots.register(
+                  const disposeSeat = ctx.slots.register(
                     {
                       name: 'conversation.input.model',
                       priority: -1,
@@ -2401,9 +2414,9 @@
                         try {
                           directory = models.directoryFor(sessionId);
                           seatAvailable = sessions.subagentAddress(sessionId) === undefined;
-                        } catch (error) {
-                          // 目录解析失败 ≠ 子代理会话的「合理隐藏」：标记失败，让组件在渲染时
-                          // 显式抛错弃用条目，把座位还给内置选择器，而不是静默画空。
+                        } catch (injectError) {
+                          SEAT_DEBUG.state = 'inject-fail';
+                          SEAT_DEBUG.detail = String(injectError && injectError.message || injectError).slice(0, 90);
                           directory = undefined;
                           seatAvailable = true;
                           seatFailed = true;
@@ -2422,7 +2435,20 @@
                     },
                     (props) => h(ModelSeat, props),
                   );
+                  SEAT_DEBUG.state = 'registered';
+                  try {
+                    const dump = (list) => (list || []).map((e) => {
+                      const o = e.options || {};
+                      return (o.id === undefined ? '∅' : String(o.id)) + '/p' + (o.priority === undefined ? '?' : o.priority);
+                    }).join('|');
+                    SEAT_DEBUG.ledger = ('win[' + dump(ctx.slots.entriesOfSlot('conversation.input.model')) + '] all[' + dump(ctx.slots.entries('conversation.input.model')) + ']').slice(0, 110);
+                  } catch (diagError) {
+                    /* 诊断失败不影响主流程 */
+                  }
+                  return disposeSeat;
                 } catch (error) {
+                  SEAT_DEBUG.state = 'reg-error';
+                  SEAT_DEBUG.detail = String(error && error.message || error).slice(0, 90);
                   console.error('[' + PLUGIN_ID + '] model seat registration failed', error);
                   return undefined;
                 }
@@ -2431,12 +2457,16 @@
             try {
               mountModelSeat();
             } catch (seatError) {
+              SEAT_DEBUG.state = 'reg-error';
+              SEAT_DEBUG.detail = String(seatError && seatError.message || seatError).slice(0, 90);
               console.error('[' + PLUGIN_ID + '] model seat registration failed', seatError);
             }
           };
           try {
             setupModelServices(ctx.modelDirectories, ctx.sessions);
           } catch (error) {
+            SEAT_DEBUG.state = 'svc-error';
+            SEAT_DEBUG.detail = String(error && error.message || error).slice(0, 90);
             ctx.inject(['modelDirectories', 'sessions'], (scope) => setupModelServices(scope.modelDirectories, scope.sessions));
           }
         },
