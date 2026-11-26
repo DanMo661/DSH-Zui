@@ -1477,13 +1477,15 @@
       }
 
       function ModelDockCapsule({ sessionId, models, sessions, t, locked }) {
-        const directory = useMemo(() => {
+        const controller = useMemo(() => {
           try {
             return models.directoryFor(sessionId);
           } catch (error) {
             return null;
           }
         }, [models, sessionId]);
+        // directoryFor 返回的是控制器；对外（uSES/快照）要用它的 .store。
+        const directory = controller ? controller.store : null;
         const addressed = useMemo(() => {
           try {
             return sessions.subagentAddress(sessionId) !== undefined;
@@ -1533,9 +1535,9 @@
           ? activeGroup.models.filter((model) => needle === '' || model.name.toLowerCase().includes(needle) || model.id.toLowerCase().includes(needle))
           : [];
         const badgeFor = (model) => (model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(null, model.badge.text)) : null);
-        if (!directory || addressed) return null;
+        if (!directory || !controller || addressed) return null;
         const submit = (selection) => {
-          void Promise.resolve(directory.select(selection)).then((result) => {
+          void Promise.resolve(controller.select(selection)).then((result) => {
             if (result && result.ok === false) {
               const code = result.error ? result.error.code : '';
               const message = result.error ? code + ': ' + result.error.message : 'unknown';
@@ -1560,7 +1562,7 @@
           }
           submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) });
         };
-        const retry = () => directory.load().catch(() => { /* 面板内呈现 */ });
+        const retry = () => controller.load().catch(() => { /* 面板内呈现 */ });
         const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
         return h(
           'div',
@@ -2424,7 +2426,7 @@
                         return {
                           available: seatAvailable,
                           seatFailed,
-                          directory: seatAvailable && !seatFailed ? directory : undefined,
+                          directory: seatAvailable && !seatFailed ? directory.store : undefined,
                           load: () => {
                             if (seatAvailable && directory) directory.load().catch(() => { /* 面板内呈现 */ });
                           },
