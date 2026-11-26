@@ -16,17 +16,28 @@ status capsule row: a **todo capsule** (`In progress 2/5`) and an **agent capsul
 stacked subagent avatars (`Done 32`). Click either one to open the todo list, the running /
 just-finished subagents and background jobs, and drill into the subagent / workflow directories.
 
+It also replaces the composer's **model picker** with a ZCode-style two-pane selector
+(provider column · model list with vision badges · reasoning-effort pills), riding the same
+shared per-session directory as DSH's own `/model` popup, and re-renders the timeline's
+**turn-trigger badges** (team messages, subagent settlements) with each sender's colored
+agent face — in team sessions every 「收到任务消息 / 子智能体已完成任务」 badge now shows
+who it came from.
+
 ## 它长什么样
 
 | 位置 | 内容 | 点开以后 |
 | --- | --- | --- |
 | 左侧胶囊 | `处理中 2/5`（标签按状态是 处理中 / 待处理 / 已完成） | 完整待办列表：已完成划线、进行中是旋转弧线、未开始是空心圆；打开时自动滚到进行中的那一项 |
 | 右侧胶囊 | 最多 3 枚子智能体头像 + `···`（还有更多时）+ `活跃中 3` / `已完成 32` | **常驻名册**：运行中的子智能体（耗时 + 停止）、后台任务（耗时 + 两击停止）、已结束的子智能体（保留显示），全部完成时顶部显示各类用量小结，底部是 `子智能体目录 32 ›` 和 `工作流目录 1 ›` |
+| 模型座位 | `GLM-5.3-Flash · Max`（替换自带的「选择模型」） | ZCode 风格双栏：左列 provider、右列模型（视觉徽标 + 搜索），底部推理等级分档；底部同时保留官方扩展项（含 **智能体团队协作** 开关）。与 `/model` 弹窗共享同一份会话目录状态，两边即时同步 |
+| 时间线触发标记 | `收到任务消息` / `子智能体已完成任务` 等回合触发徽标 | 每条带上发送者的九色头像脸与会话名，可展开看原始消息 |
 | 子智能体目录 | 当前会话的直接子智能体，可逐层展开嵌套目录 | 点一行跳到那个子会话 |
 | 工作流目录 | 本会话的工作流运行：名称、状态、成员进度 | 只读 |
 
 头像的状态一眼可辨：
 
+- **九色板**：每个子智能体按其会话 id 稳定取色（ZCode 同款九色），名册、胶囊头像堆、
+  时间线卡片、触发标记里同一个智能体恒定同色
 - **运行中**：竖长眼，会眨
 - **已完成**：左下角绿色对勾徽标
 - **已结束但没正常完成**：左下角灰色方块徽标

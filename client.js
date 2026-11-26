@@ -90,6 +90,39 @@
       'duration.minutes': '分',
       'duration.seconds': '秒',
       'duration.join': '',
+      'model.triggerEmpty': '请选择模型',
+      'model.loading': '正在加载模型…',
+      'model.aria': '选择模型，当前 {model}',
+      'model.ariaEffort': '选择模型，当前 {model}，推理等级 {effort}',
+      'model.effort': '推理等级',
+      'model.providerDefault': 'Default',
+      'model.listLoading': '正在刷新模型列表…',
+      'model.retry': '重试',
+      'model.empty': '暂无可用模型',
+      'model.searchPlaceholder': '搜索模型…',
+      'model.searchEmpty': '没有匹配的模型。',
+      'model.noEfforts': '当前模型未提供推理等级。',
+      'model.error': '模型操作失败：{message}',
+      'model.sessionInUse': '当前会话已被占用，可能是其他正在运行的 DSH 导致的，请退出其他正在运行的 DSH 后重试。',
+      'model.accountProvider': 'DeepSeek 账号',
+      'model.count': '{count} 个模型',
+      'trigger.request': '收到执行请求',
+      'trigger.continue': '收到继续请求',
+      'trigger.goal': '继续执行目标',
+      'trigger.agent': '收到任务消息',
+      'trigger.team': '收到团队消息',
+      'trigger.subagent': '子任务状态更新',
+      'trigger.subagent.completed': '子智能体已完成任务',
+      'trigger.subagent.aborted': '子智能体任务已停止',
+      'trigger.subagent.error': '子智能体任务失败',
+      'trigger.subagent.maxTokens': '子智能体任务超出长度上限',
+      'trigger.subagent.refusal': '子智能体拒绝了任务',
+      'trigger.subagent.unknown': '子任务状态更新',
+      'trigger.schedule': '定时任务触发',
+      'trigger.job': '后台任务唤醒',
+      'trigger.plugin': '插件唤醒',
+      'trigger.github': 'GitHub 触发',
+      'trigger.webhook': 'Webhook 触发',
     },
     en: {
       'todo.running': 'In progress',
@@ -132,6 +165,39 @@
       'duration.minutes': 'm',
       'duration.seconds': 's',
       'duration.join': ' ',
+      'model.triggerEmpty': 'Select model',
+      'model.loading': 'Loading models…',
+      'model.aria': 'Select model, current {model}',
+      'model.ariaEffort': 'Select model, current {model}, effort {effort}',
+      'model.effort': 'Effort',
+      'model.providerDefault': 'Default',
+      'model.listLoading': 'Refreshing model list…',
+      'model.retry': 'Retry',
+      'model.empty': 'No models available.',
+      'model.searchPlaceholder': 'Search models…',
+      'model.searchEmpty': 'No matching models.',
+      'model.noEfforts': 'This model provides no reasoning effort levels.',
+      'model.error': 'Model action failed: {message}',
+      'model.sessionInUse': 'This session is already in use. Quit other running DSH instances and try again.',
+      'model.accountProvider': 'DeepSeek Account',
+      'model.count': '{count} models',
+      'trigger.request': 'Received a run request',
+      'trigger.continue': 'Received a continue request',
+      'trigger.goal': 'Goal continuation',
+      'trigger.agent': 'Received an agent message',
+      'trigger.team': 'Received a team message',
+      'trigger.subagent': 'Subtask status update',
+      'trigger.subagent.completed': 'Subagent finished its task',
+      'trigger.subagent.aborted': 'Subagent task was stopped',
+      'trigger.subagent.error': 'Subagent task failed',
+      'trigger.subagent.maxTokens': 'Subagent task ran out of tokens',
+      'trigger.subagent.refusal': 'Subagent declined the task',
+      'trigger.subagent.unknown': 'Subtask status update',
+      'trigger.schedule': 'Scheduled task fired',
+      'trigger.job': 'Background job woke the session',
+      'trigger.plugin': 'Plugin woke the session',
+      'trigger.github': 'GitHub trigger',
+      'trigger.webhook': 'Webhook trigger',
     },
   };
 
@@ -236,6 +302,51 @@
     '.dsc-toolcard-body{margin:2px 0 4px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover)}',
     '.dsc-toolcard-desc{margin:0 0 4px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}',
     '.dsc-toolcard-pre{margin:0;max-height:180px;overflow:auto;font-family:var(--dsw-font-family,ui-monospace,monospace);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-secondary);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}',
+    // ---- 模型选择座位：ZCode 风格双栏（provider 列 + 模型列 + 推理等级分档）----
+    '.dsc-popover--wide{min-width:min(500px,100vw - 24px);max-width:min(640px,100vw - 24px)}',
+    '.dsc-modelpop{display:flex;gap:8px;align-items:stretch;padding:2px 0 0}',
+    '.dsc-modelpop-side{flex:none;width:150px;max-height:min(320px,42dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-modelpop-main{flex:1;min-width:0;max-height:min(320px,42dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-mrow{box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;min-height:30px;margin:0;padding:4px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;line-height:20px;text-align:left;cursor:pointer}',
+    '@media(hover:hover){.dsc-mrow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
+    '.dsc-mrow[aria-checked=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);font-weight:500}',
+    '.dsc-mrow[disabled]{opacity:.55;cursor:default}',
+    '.dsc-mrow-copy{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden}',
+    '.dsc-mrow-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.dsc-mrow-count{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}',
+    '.dsc-mrow-check{flex:none;display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;color:var(--dsw-alias-state-success-primary)}',
+    '.dsc-mrow-check svg{width:14px;height:14px}',
+    '.dsc-badge{flex:none;display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:400;line-height:18px}',
+    '.dsc-badge[data-tone=success]{color:var(--dsw-alias-state-success-primary)}',
+    '.dsc-badge[data-tone=info],.dsc-badge[data-tone=brand]{color:var(--dsw-alias-brand-primary)}',
+    '.dsc-badge[data-tone=warning]{color:var(--dsw-alias-state-warning-primary)}',
+    '.dsc-modelpop-foot{flex:none;display:flex;align-items:center;gap:10px;min-height:36px;padding:6px 2px 2px;border-top:0.5px solid var(--dsw-alias-border-l1);margin-top:4px}',
+    '.dsc-modelpop-footlabel{flex:none;color:var(--dsw-alias-label-secondary);font-size:12px}',
+    '.dsc-effort{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}',
+    '.dsc-effort-pill{box-sizing:border-box;display:inline-flex;align-items:center;min-height:24px;padding:2px 12px;border:0.5px solid var(--dsw-alias-border-l2);border-radius:999px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:18px;cursor:pointer}',
+    '.dsc-effort-pill[aria-checked=true]{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-on-accent,#fff);font-weight:500}',
+    '@media(hover:hover){.dsc-effort-pill:hover:not([aria-checked=true]):not([disabled]){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
+    '.dsc-effort-pill[disabled]{opacity:.55;cursor:default}',
+    '.dsc-modelpop-search{box-sizing:border-box;width:100%;min-height:28px;margin:0 0 4px;padding:3px 10px;border:0.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;line-height:20px}',
+    '.dsc-modelpop-search::placeholder{color:var(--dsw-alias-label-tertiary)}',
+    '.dsc-modelpop-search:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:0}',
+    '.dsc-modelpop-note{padding:6px 8px;color:var(--dsw-alias-label-tertiary);font-size:12px}',
+    '.dsc-modelpop-error{margin-top:4px;padding:5px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}',
+    '.dsc-modelseat-effort{color:var(--dsw-alias-label-tertiary);font-size:12px}',
+    '.dsc-mrow:focus-visible,.dsc-effort-pill:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
+    // ---- 回合触发标记：keyed 接管 turn-trigger，事件带发送者头像脸与身份 ----
+    '.dsc-trigger{display:flex;align-items:flex-start;gap:6px;margin:2px 0;padding:1px 8px 1px 0}',
+    '.dsc-trigger-face{flex:none;display:inline-flex;margin-top:2px}',
+    '.dsc-trigger-head{flex:1;min-width:0;display:flex;align-items:center;gap:6px;min-height:24px;padding:2px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:18px;text-align:left;cursor:pointer}',
+    '@media(hover:hover){.dsc-trigger-head:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
+    '.dsc-trigger-head:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
+    '.dsc-trigger-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.dsc-trigger-sender{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px}',
+    '.dsc-trigger-time{flex:none;margin-left:auto;color:var(--dsw-alias-label-tertiary);font-size:11px;font-variant-numeric:tabular-nums}',
+    '.dsc-trigger-chevron{flex:none;display:inline-flex;color:var(--dsw-alias-label-tertiary)}',
+    '.dsc-trigger-chevron svg{transition:transform .15s ease}',
+    '.dsc-trigger-chevron[data-open] svg{transform:rotate(90deg)}',
+    '.dsc-trigger-body{margin:0 0 2px 26px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto;font-family:var(--dsw-font-family,inherit)}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
   ].join('');
@@ -574,6 +685,13 @@
         pulse() {
           return svg({ ...STROKE }, [h('path', { key: 'p', d: 'M1.8 8.4h2.9l1.7-4.4 2.6 8 1.9-4.2 1 1.2h2.3' })]);
         },
+        /** 芯片（模型选择座位）。 */
+        chip() {
+          return svg({ ...STROKE }, [
+            h('rect', { key: 'r', x: 4.4, y: 4.4, width: 7.2, height: 7.2, rx: 1.6 }),
+            h('path', { key: 'pins', d: 'M6.3 1.8v2.6M9.7 1.8v2.6M6.3 11.6v2.6M9.7 11.6v2.6M1.8 6.3h2.6M1.8 9.7h2.6M11.6 6.3h2.6M11.6 9.7h2.6' }),
+          ]);
+        },
         terminal() {
           return svg({ ...STROKE }, [
             h('rect', { key: 'r', x: 2, y: 3, width: 12, height: 10, rx: 2 }),
@@ -594,6 +712,9 @@
         },
         chevronLeft() {
           return svg({ ...STROKE }, [h('path', { key: 'p', d: 'M10 3.8L5.8 8 10 12.2' })]);
+        },
+        chevronDown() {
+          return svg({ ...STROKE }, [h('path', { key: 'p', d: 'M3.8 6L8 10.2 12.2 6' })]);
         },
         stop() {
           return svg({ width: 12, height: 12 }, [h('rect', { key: 'r', x: 3, y: 3, width: 10, height: 10, rx: 2.5, fill: 'currentColor' })]);
@@ -745,7 +866,7 @@
        * 不支持时切 JS 定位兜底。外点或 Escape 关闭；Escape 在这里被吃掉，不会成为
        * 「Esc Esc 停止」序列的第一击。
        */
-      function Popover({ open, anchorRef, onClose, anchorName, label, children }) {
+      function Popover({ open, anchorRef, onClose, anchorName, label, wide, children }) {
         const panelRef = useRef(null);
         // 开面板后实测一次：面板中心没对准胶囊中心（>8px，比如页面残留旧样式表、引擎
         // 对 anchor() 的实现有差异）就整体切到 JS 定位，宁可多一层兜底也不歪着显示。
@@ -792,7 +913,7 @@
           style = { ...(fallback || { visibility: 'hidden', left: 0, top: 0 }), translate: 'none' };
         }
         return ReactDOM.createPortal(
-          h('div', { ref: panelRef, className: 'dsc-popover', role: 'dialog', 'aria-label': label, 'data-window-drag-exclude': '', style }, children),
+          h('div', { ref: panelRef, className: cls('dsc-popover', wide && 'dsc-popover--wide'), role: 'dialog', 'aria-label': label, 'data-window-drag-exclude': '', style }, children),
           document.body,
         );
       }
@@ -1010,6 +1131,371 @@
             h('span', { className: cls('dsc-sub', failed && 'dsc-sub--error'), title: sub }, failed ? t('job.stopFailed') : sub),
           ),
           canKill ? h(StopButton, { key: 'stop', armed, busy: stopping, label: t('job.stop'), confirmLabel: t('job.confirmStop'), onStop: handleStop }) : null,
+        );
+      }
+
+      // ------------------------------------------------------------------
+      // 模型选择座位：替换 composer 自带的「选择模型」条目。
+      // 数据与动作复用宿主 modelDirectories 服务（与 /model 弹窗共享同一份
+      // 会话目录状态），UI 按 ZCode 双栏风格：左 provider 列、右模型列
+      // （视觉徽标 + 搜索），底部推理等级分档。选中即调 directory.select。
+      // ------------------------------------------------------------------
+
+      const EMPTY_DIRECTORY = { current: null, groups: [], failures: [], status: 'idle', pending: null, error: null };
+
+      /** 目录的 provider 排序：账号最前、官方次之，其余保持目录顺序（与宿主一致）。 */
+      function orderProviders(groups) {
+        const rank = (id) => (id === 'deepseek-account' ? 0 : id === 'deepseek-official' ? 1 : 2);
+        return groups.slice().sort((left, right) => rank(left.id) - rank(right.id));
+      }
+
+      /** 徽标文案：宿主 resolveText 优先，退回原文 / zh / en。 */
+      function badgeText(resolveText, text) {
+        if (typeof resolveText === 'function') {
+          try {
+            const out = resolveText(text);
+            if (typeof out === 'string' && out !== '') return out;
+          } catch (error) {
+            /* fall through */
+          }
+        }
+        if (typeof text === 'string') return text;
+        if (text && typeof text === 'object') return text.zh ?? text.en ?? Object.values(text)[0] ?? '';
+        return '';
+      }
+
+      function ModelSeat({ locked, available, directory, load, select, resolveText, t, renderSlot }) {
+        const state = useSyncExternalStore(
+          directory ? (listener) => directory.subscribe(listener) : () => () => {},
+          directory ? () => directory.getSnapshot() : () => EMPTY_DIRECTORY,
+        );
+        const [open, setOpen] = useState(false);
+        const [providerId, setProviderId] = useState(null);
+        const [query, setQuery] = useState('');
+        const [errorText, setErrorText] = useState(null);
+        const anchorRef = useRef(null);
+        const errorTimer = useRef(null);
+        useEffect(() => () => clearTimeout(errorTimer.current), []);
+        const showError = (text) => {
+          setErrorText(text);
+          clearTimeout(errorTimer.current);
+          errorTimer.current = setTimeout(() => setErrorText(null), FEEDBACK_MS);
+        };
+        const close = () => {
+          setOpen(false);
+          setQuery('');
+        };
+
+        const current = state.current;
+        let currentModel;
+        for (const group of state.groups) {
+          const hit = current !== null ? group.models.find((model) => group.id === current.provider && model.id === current.model) : undefined;
+          if (hit !== undefined) {
+            currentModel = hit;
+            break;
+          }
+        }
+        const reasoning = currentModel ? currentModel.reasoning : undefined;
+        const effectiveEffort = (current && current.reasoningEffort) || reasoning?.defaultEffort;
+        const effortName = reasoning === undefined
+          ? state.retainedEffort
+          : effectiveEffort === undefined
+            ? t('model.providerDefault')
+            : reasoning.efforts.find((level) => level.id === effectiveEffort)?.name ?? effectiveEffort;
+        const ordered = orderProviders(state.groups);
+        const activeId = providerId ?? (current ? current.provider : null) ?? (ordered[0] ? ordered[0].id : null);
+        const activeGroup = ordered.find((group) => group.id === activeId) ?? ordered[0] ?? null;
+        const needle = query.trim().toLowerCase();
+        const visibleModels = activeGroup
+          ? activeGroup.models.filter((model) => needle === '' || model.name.toLowerCase().includes(needle) || model.id.toLowerCase().includes(needle))
+          : [];
+        const busy = state.pending !== null;
+        const waiting = current === null && state.status === 'loading';
+        const modelLabel = waiting ? t('model.loading') : currentModel ? currentModel.name : t('model.triggerEmpty');
+        const triggerLabel = effortName ? modelLabel + ' · ' + effortName : modelLabel;
+        const aria = effortName ? t('model.ariaEffort', { model: modelLabel, effort: effortName }) : t('model.aria', { model: modelLabel });
+        const effortPills = reasoning === undefined ? [] : [
+          ...(reasoning.defaultEffort === undefined ? [{ key: 'provider-default', effort: undefined, label: t('model.providerDefault') }] : []),
+          ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
+        ];
+
+        if (!available || !directory) return null;
+
+        const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
+        const renderName = (group, model, placement, selected) =>
+          renderSlot(
+            'conversation.input.model.label',
+            { provider: { id: group.id, name: providerName(group) }, model, placement, selected },
+            {
+              fallback: model.badge === undefined
+                ? h('span', { className: 'dsc-mrow-name', title: model.name }, model.name)
+                : h(
+                    'span',
+                    { className: 'dsc-mrow-name', title: model.name },
+                    placement === 'trigger' ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(resolveText, model.badge.text)) : null,
+                    h('span', null, model.name),
+                    placement === 'trigger' ? null : h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(resolveText, model.badge.text)),
+                  ),
+            },
+          );
+
+        const submit = (selection) => {
+          void Promise.resolve(select(selection)).then((result) => {
+            if (result && result.ok === false) {
+              const code = result.error ? result.error.code : '';
+              const message = result.error ? code + ': ' + result.error.message : 'unknown';
+              showError(code === 'session/writer-held' ? t('model.sessionInUse') : t('model.error', { message }));
+            } else if (result && result.ok) {
+              close();
+            }
+          });
+        };
+        const chooseModel = (group, model) => {
+          if (current && current.provider === group.id && current.model === model.id) {
+            close();
+            return;
+          }
+          submit({ provider: group.id, model: model.id });
+        };
+        const chooseEffort = (effort) => {
+          if (!current) return;
+          if (effectiveEffort === effort) {
+            close();
+            return;
+          }
+          submit({ provider: current.provider, model: current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) });
+        };
+        const retry = () => {
+          if (load) load();
+        };
+
+        return h(
+          'div',
+          { className: 'dsc-modelseat' },
+          h(
+            'button',
+            {
+              ref: anchorRef,
+              type: 'button',
+              className: 'dsc-capsule',
+              'aria-haspopup': 'dialog',
+              'aria-expanded': open,
+              'aria-label': aria,
+              'aria-busy': busy,
+              title: triggerLabel,
+              disabled: locked,
+              onClick: () => {
+                if (open) close();
+                else {
+                  setOpen(true);
+                  retry();
+                }
+              },
+              style: { '--dsc-anchor': '--dsc-anchor-model' },
+            },
+            h('span', { key: 'icon', className: 'dsc-capsule-icon' }, ICON.chip()),
+            h('span', { key: 'label', className: 'dsc-capsule-label dsc-mrow-name' },
+              currentModel && current ? renderName(activeGroup && activeGroup.id === current.provider ? activeGroup : { id: current.provider, name: current.provider, models: [] }, currentModel, 'trigger', true) : modelLabel),
+            effortName ? h('span', { key: 'effort', className: 'dsc-modelseat-effort' }, effortName) : null,
+            busy
+              ? h('span', { key: 'busy', className: 'dsc-glyph dsc-glyph--spin dsc-capsule-icon' }, todoGlyph('in_progress'))
+              : h('span', { key: 'chevron', className: 'dsc-capsule-icon' }, ICON.chevronDown()),
+          ),
+          h(
+            Popover,
+            { open, anchorRef, onClose: close, label: aria, anchorName: '--dsc-anchor-model', wide: true },
+            h(
+              'div',
+              { className: 'dsc-modelpop' },
+              h(
+                'div',
+                { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.effort') },
+                ordered.map((group) =>
+                  h(
+                    'button',
+                    {
+                      key: group.id,
+                      type: 'button',
+                      className: 'dsc-mrow',
+                      role: 'option',
+                      'aria-checked': activeGroup ? group.id === activeGroup.id : false,
+                      disabled: busy,
+                      onClick: () => setProviderId(group.id),
+                      title: providerName(group),
+                    },
+                    h('span', { className: 'dsc-mrow-copy' }, h('span', { className: 'dsc-mrow-name' }, providerName(group))),
+                    h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length })),
+                  ),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'dsc-modelpop-main' },
+                totalModels > 6
+                  ? h('input', {
+                      className: 'dsc-modelpop-search',
+                      type: 'search',
+                      placeholder: t('model.searchPlaceholder'),
+                      'aria-label': t('model.searchPlaceholder'),
+                      value: query,
+                      disabled: busy,
+                      onChange: (event) => setQuery(event.target.value),
+                    })
+                  : null,
+                state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
+                state.error !== null
+                  ? h('div', { className: 'dsc-modelpop-error' },
+                      h('span', null, t('model.error', { message: state.error })),
+                      h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
+                  : null,
+                state.failures.map((failure) =>
+                  h('div', { className: 'dsc-modelpop-note', key: failure.id },
+                    (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                ),
+                activeGroup === null || (state.status === 'ready' && totalModels === 0)
+                  ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
+                  : visibleModels.length === 0 && needle !== ''
+                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.searchEmpty'))
+                    : visibleModels.map((model) => {
+                        const selected = current !== null && activeGroup.id === current.provider && model.id === current.model;
+                        const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
+                        return h(
+                          'button',
+                          {
+                            key: model.id,
+                            type: 'button',
+                            className: 'dsc-mrow',
+                            role: 'menuitemradio',
+                            'aria-checked': selected,
+                            disabled: busy,
+                            title: model.name,
+                            onClick: () => chooseModel(activeGroup, model),
+                          },
+                          h('span', { className: 'dsc-mrow-copy' }, renderName(activeGroup, model, 'option', selected)),
+                          h('span', { className: 'dsc-mrow-check' },
+                            pendingRow
+                              ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
+                              : selected
+                                ? ICON.done()
+                                : null),
+                        );
+                      }),
+              ),
+              reasoning === undefined && currentModel ? null : effortPills.length > 0
+                ? h(
+                    'div',
+                    { className: 'dsc-modelpop-foot' },
+                    h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
+                    h(
+                      'div',
+                      { className: 'dsc-effort', role: 'radiogroup', 'aria-label': t('model.effort') },
+                      effortPills.map((pill) =>
+                        h('button', {
+                          key: pill.key,
+                          type: 'button',
+                          className: 'dsc-effort-pill',
+                          role: 'radio',
+                          'aria-checked': effectiveEffort === pill.effort,
+                          disabled: busy || !current,
+                          onClick: () => chooseEffort(pill.effort),
+                        }, pill.label),
+                      ),
+                    ),
+                  )
+                : null,
+              typeof renderSlot === 'function'
+                ? renderSlot('conversation.input.model.options', {
+                    locked: locked || busy,
+                    dismiss: close,
+                    reportFailure: showError,
+                  })
+                : null,
+              errorText ? h('div', { className: 'dsc-modelpop-error', role: 'alert' }, errorText) : null,
+            ),
+          ),
+        );
+      }
+
+      // ------------------------------------------------------------------
+      // 回合触发标记：keyed 接管 conversation.chat.node 的 turn-trigger。
+      // 团队/子代理事件（收到任务消息、子智能体已完成/停止…）原本只有一枚
+      // 通用图标；这里按 senderSessionId 画上发送者的头像脸（九色板取色，
+      // 结算事件按 stopReason 定脸），名字取会话标题，可展开看原始消息。
+      // ------------------------------------------------------------------
+
+      /** 触发消息的呈现规则：事件种类 → 文案键 + 头像状态 + 发送者会话 id。 */
+      function triggerDetails(node) {
+        const source = node && typeof node.source === 'object' && node.source !== null ? node.source : {};
+        const kind = typeof source.kind === 'string' ? source.kind : '';
+        switch (kind) {
+          case 'agent-message':
+            return { key: 'trigger.agent', face: 'running', senderId: source.senderSessionId };
+          case 'team-message':
+            return { key: 'trigger.team', face: 'running', senderId: source.senderId };
+          case 'subagent-settled': {
+            const reason = typeof source.stopReason === 'string' ? source.stopReason : '';
+            const map = {
+              completed: 'trigger.subagent.completed',
+              aborted: 'trigger.subagent.aborted',
+              error: 'trigger.subagent.error',
+              'max-tokens': 'trigger.subagent.maxTokens',
+              refusal: 'trigger.subagent.refusal',
+            };
+            return {
+              key: map[reason] ?? 'trigger.subagent',
+              face: reason === 'completed' ? 'done' : 'ended',
+              senderId: source.senderSessionId,
+            };
+          }
+          case 'retry':
+            return { key: 'trigger.continue' };
+          case 'goal':
+            return { key: 'trigger.goal' };
+          case 'schedule':
+            return { key: 'trigger.schedule' };
+          case 'tool-jobs':
+            return { key: 'trigger.job' };
+          case 'cordis-host-runner':
+            return { key: 'trigger.plugin' };
+          case 'webhook':
+            return { key: source.provider === 'github' ? 'trigger.github' : 'trigger.webhook' };
+          default:
+            return { key: 'trigger.request' };
+        }
+      }
+
+      function TriggerNode({ node, t, useSessions }) {
+        const [open, setOpen] = useState(false);
+        const details = triggerDetails(node);
+        const showFace = details.senderId !== undefined && details.senderId !== null;
+        let senderName = null;
+        if (showFace && typeof useSessions === 'function') {
+          const sender = useSessions((state) => (state.byId ? state.byId[details.senderId] : undefined));
+          senderName = sender && typeof sender.title === 'string' && sender.title !== '' ? sender.title : String(details.senderId);
+        }
+        let timeText = '';
+        try {
+          const date = new Date(node.time);
+          if (!Number.isNaN(date.getTime())) timeText = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (error) {
+          timeText = '';
+        }
+        const body = Array.isArray(node?.content)
+          ? node.content.map((block) => (block && block.type === 'text' && typeof block.text === 'string' ? block.text : null)).filter(Boolean).join('\n')
+          : '';
+        return h(
+          'div',
+          { className: 'dsc-trigger' },
+          showFace ? h('span', { className: 'dsc-trigger-face' }, h(Face, { name: senderName ?? details.senderId, state: details.face ?? 'idle', size: 14 })) : null,
+          h(
+            'button',
+            { type: 'button', className: 'dsc-trigger-head', 'aria-expanded': open, onClick: () => setOpen((current) => !current) },
+            h('span', { className: 'dsc-trigger-title' }, t(details.key)),
+            senderName !== null ? h('span', { className: 'dsc-trigger-sender' }, senderName) : null,
+            timeText !== '' ? h('time', { className: 'dsc-trigger-time' }, timeText) : null,
+            h('span', { className: 'dsc-trigger-chevron', 'data-open': open ? '' : undefined }, ICON.chevronDown()),
+          ),
+          open && body !== '' ? h('pre', { className: 'dsc-trigger-body' }, body) : null,
         );
       }
 
@@ -1543,6 +2029,55 @@
             ctx.slots.register({ name: 'tool.call.toolview', key: 'subagent', priority: -1, locale: NS }, (props) => h(SubagentToolRow, { ...props, lang }));
             ctx.slots.register({ name: 'tool.call.toolview', key: 'subagent_fork', priority: -1, locale: NS }, (props) => h(SubagentToolRow, { ...props, lang }));
           });
+          // 会话时间线里的回合触发标记（团队消息、子智能体结算…）：keyed 接管，
+          // 事件带上发送者的头像脸（九色板取色）与身份（senderSessionId ↔ 会话标题）。
+          ctx.slots.inject('conversation.chat.node', () => {
+            ctx.slots.register({ name: 'conversation.chat.node', key: 'turn-trigger', priority: -1, locale: NS }, (props) => h(TriggerNode, props));
+          });
+          // 模型选择座位：以更低的 priority 压过内置 seat（ZCode 风格双栏 + 推理等级）。
+          // 目录状态与提交动作复用宿主 modelDirectories 服务——与 /model 弹窗共享同一份
+          // 会话状态，任何一边切换另一边即时同步。children 不在这里重复声明（ledger 里
+          // 宿主已声明，重复声明会验证失败导致条目被弃用）；服务未挂载时不注入，
+          // 内置 seat 原样保留。
+          const mountModelSeat = (models, sessions) => {
+            ctx.slots.inject('conversation.input.model', () =>
+              ctx.slots.register(
+                {
+                  name: 'conversation.input.model',
+                  id: PLUGIN_ID + '-model-seat',
+                  priority: -1,
+                  order: 0,
+                  locale: NS,
+                  inject: (sessionId) => {
+                    let directory;
+                    let seatAvailable = false;
+                    try {
+                      directory = models.directoryFor(sessionId);
+                      seatAvailable = sessions.subagentAddress(sessionId) === undefined;
+                    } catch (error) {
+                      directory = undefined;
+                      seatAvailable = false;
+                    }
+                    return {
+                      available: seatAvailable,
+                      directory: seatAvailable ? directory : undefined,
+                      load: () => {
+                        if (seatAvailable && directory) directory.load().catch(() => { /* 面板内呈现 */ });
+                      },
+                      resolveText: (text) => badgeText(ctx.locale && typeof ctx.locale.resolveText === 'function' ? ctx.locale.resolveText : undefined, text),
+                      select: (selection) => (seatAvailable && directory ? directory.select(selection) : Promise.resolve(undefined)),
+                    };
+                  },
+                },
+                (props) => h(ModelSeat, props),
+              ),
+            );
+          };
+          try {
+            mountModelSeat(ctx.modelDirectories, ctx.sessions);
+          } catch (error) {
+            ctx.inject(['modelDirectories', 'sessions'], (scope) => mountModelSeat(scope.modelDirectories, scope.sessions));
+          }
         },
       };
     },
