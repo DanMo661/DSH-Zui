@@ -865,14 +865,13 @@
         );
       }
 
-      function AvatarStack({ agents, overflow }) {
+      function AvatarStack({ agents }) {
         return h(
           'span',
           { className: 'dsc-capsule-icon dsc-stack', 'aria-hidden': true },
           agents.map((agent, index) =>
             h('span', { key: agent.id, className: 'dsc-stack-slot', style: { zIndex: index + 1 } }, h(Face, { name: agentColorKey(agent), state: agent.state, size: 16 })),
           ),
-          overflow > 0 ? h('span', { key: 'more', className: 'dsc-more' }, ICON.dots()) : null,
         );
       }
 
@@ -1656,7 +1655,6 @@
           .filter((agent) => !agent.running)
           .sort((left, right) => right.createdAt - left.createdAt);
         const avatars = pickAvatars(children);
-        const overflow = children.length - avatars.length;
         // 计数：运行中 = 在跑的智能体 / 后台任务 / 工作流；空闲时 = 各类总量之和
         // （名册常驻后这就是本会话各自用了多少个）。
         const runningCount = running.length + liveJobs.length + activeRuns.length;
@@ -1749,7 +1747,7 @@
             onToggle,
             label: t('activity.title') + '：' + label + ' ' + count,
             title: t('activity.title'),
-            icon: avatars.length > 0 ? h(AvatarStack, { agents: avatars, overflow }) : ICON.pulse(),
+            icon: avatars.length > 0 ? h(AvatarStack, { agents: avatars }) : ICON.pulse(),
             text: label,
             count,
             anchorName: '--dsc-anchor-activity',
@@ -1868,24 +1866,9 @@
         const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || openId === 'activity';
         // 打开期间不因数据瞬空强制关闭：待办被模型清空时浮层显示空态，由用户自行收起。
         if (!showTodo && !showActivity) return null;
-        const reload = () => {
-          try {
-            window.location.reload();
-          } catch (error) {
-            /* 忽略：极端环境下无法刷新 */
-          }
-        };
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-row': '' },
-          h('button', {
-            key: 'refresh',
-            type: 'button',
-            className: 'dsc-refresh',
-            title: t('refresh.title'),
-            'aria-label': t('refresh.title'),
-            onClick: reload,
-          }, ICON.refresh()),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -1907,6 +1890,23 @@
               })
             : null,
         );
+      }
+
+      /** 回合收尾扩展位（「20 轮…」状态行的左边）上的刷新页面按钮。 */
+      function TurnTailRefresh({ t }) {
+        return h('button', {
+          type: 'button',
+          className: 'dsc-refresh',
+          title: t('refresh.title'),
+          'aria-label': t('refresh.title'),
+          onClick: () => {
+            try {
+              window.location.reload();
+            } catch (error) {
+              /* 忽略：极端环境下无法刷新 */
+            }
+          },
+        }, ICON.refresh());
       }
 
       /** slot 条目：标准 props 不齐（极旧的 DSH）时退回最简待办胶囊。 */
@@ -2083,6 +2083,11 @@
           // 事件带上发送者的头像脸（九色板取色）与身份（senderSessionId ↔ 会话标题）。
           ctx.slots.inject('conversation.chat.node', () => {
             ctx.slots.register({ name: 'conversation.chat.node', key: 'turn-trigger', priority: -1, locale: NS }, (props) => h(TriggerNode, props));
+          });
+          // 回合收尾扩展位（「20 轮…」状态行的左边）：官方 extension tail 列表槽，
+          // 放一枚刷新页面按钮——应用没绑 Ctrl+R，插件/样式没同步时一键整页重载。
+          ctx.slots.inject('conversation.chat.turnTail', () => {
+            ctx.slots.register({ name: 'conversation.chat.turnTail', id: PLUGIN_ID + '-refresh', priority: -1, locale: NS }, (props) => h(TurnTailRefresh, props));
           });
           // 模型选择座位：以更低的 priority 压过内置 seat（ZCode 风格双栏 + 推理等级）。
           // 目录状态与提交动作复用宿主 modelDirectories 服务——与 /model 弹窗共享同一份
