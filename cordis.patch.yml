@@ -1,0 +1,9 @@
+# dsh-pulse（原 dsh-status-capsules）—— DSH bundle patch
+#
+# 把本插件作为一条 Loader 条目插入 profile 配置树。
+# 浏览器半边（client.js）会遮蔽 ui-conversation 内置的 Todo dock，
+# 换成 ZCode 风格的状态胶囊行；禁用本插件后内置 Todo dock 自动恢复。
+
+- insert:
+    - id: dsh-pulse
+      name: 'dsh-pulse'

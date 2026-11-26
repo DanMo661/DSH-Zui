@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Status Capsules",
+    "description": "Shows ZCode-style status capsules above the composer: todo progress, subagent avatars and background jobs. Click to open the todo list, the subagent directory and the workflow directory."
+  }
+}

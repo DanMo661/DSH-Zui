@@ -1,0 +1,58 @@
+{
+  "name": "dsh-pulse",
+  "version": "0.1.0",
+  "description": "DSH Pulse · 会话状态胶囊栏：输入框上方的待办胶囊（处理中 0/5）+ 智能体活动胶囊（头像堆叠 · 已完成 32），对话流中的子智能体实时卡片，点开待办列表、子智能体目录与工作流目录。 A ZCode-style status capsule row above the composer with live subagent cards in the conversation.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "todo",
+    "subagent",
+    "status",
+    "capsule",
+    "pulse",
+    "composer"
+  ],
+  "type": "module",
+  "main": "index.js",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "LICENSES/ZCode-APACHE-2.0.txt"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "peerDependencies": {
+    "react": "*"
+  },
+  "devDependencies": {
+    "react": "*"
+  },
+  "license": "MIT"
+}
