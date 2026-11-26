@@ -358,6 +358,7 @@
     '@media(hover:hover){.dsc-refresh:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}',
     '.dsc-refresh:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
     '.dsc-refresh svg{display:block}',
+    '.dsc-seatdebug{flex:none;margin-left:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
   ].join('');
@@ -1161,6 +1162,8 @@
       // ------------------------------------------------------------------
 
       const EMPTY_DIRECTORY = { current: null, groups: [], failures: [], status: 'idle', pending: null, error: null };
+      // 诊断（模型座位接管失败排查用）：注册状态机直接显示在 dock 行，UIA 可读。
+      const SEAT_DEBUG = { state: 'idle', detail: '' };
 
       /** 目录的 provider 排序：账号最前、官方次之，其余保持目录顺序（与宿主一致）。 */
       function orderProviders(groups) {
@@ -1435,6 +1438,264 @@
             ),
           ),
         );
+      }
+
+      // ------------------------------------------------------------------
+      // dock 里的模型胶囊：与 composer 座位同一面板、同一份会话目录状态
+      // （宿主 modelDirectories 服务），但挂在我 100% 可靠的 dock 插槽里。
+      // 座位槽位的选举被宿主控制、逐页表现不一，dock 这份是保底入口。
+      // ------------------------------------------------------------------
+
+      /** 目录快照 → 面板视图模型（纯函数，座位与 dock 胶囊共用）。 */
+      function modelViewModel(state, t) {
+        const current = state.current;
+        let currentModel;
+        for (const group of state.groups) {
+          const hit = current !== null ? group.models.find((model) => group.id === current.provider && model.id === current.model) : undefined;
+          if (hit !== undefined) {
+            currentModel = hit;
+            break;
+          }
+        }
+        const reasoning = currentModel ? currentModel.reasoning : undefined;
+        const effectiveEffort = (current && current.reasoningEffort) || reasoning?.defaultEffort;
+        const effortName = reasoning === undefined
+          ? state.retainedEffort
+          : effectiveEffort === undefined
+            ? t('model.providerDefault')
+            : reasoning.efforts.find((level) => level.id === effectiveEffort)?.name ?? effectiveEffort;
+        const ordered = orderProviders(state.groups);
+        const effortPills = reasoning === undefined ? [] : [
+          ...(reasoning.defaultEffort === undefined ? [{ key: 'provider-default', effort: undefined, label: t('model.providerDefault') }] : []),
+          ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
+        ];
+        return { current, currentModel, reasoning, effectiveEffort, effortName, ordered, effortPills };
+      }
+
+      function ModelDockCapsule({ sessionId, models, sessions, t, locked }) {
+        const directory = useMemo(() => {
+          try {
+            return models.directoryFor(sessionId);
+          } catch (error) {
+            return null;
+          }
+        }, [models, sessionId]);
+        const addressed = useMemo(() => {
+          try {
+            return sessions.subagentAddress(sessionId) !== undefined;
+          } catch (error) {
+            return false;
+          }
+        }, [sessions, sessionId]);
+        const state = useSyncExternalStore(
+          directory ? (listener) => directory.subscribe(listener) : () => () => {},
+          directory ? () => directory.getSnapshot() : () => EMPTY_DIRECTORY,
+        );
+        const [open, setOpen] = useState(false);
+        const [providerId, setProviderId] = useState(null);
+        const [query, setQuery] = useState('');
+        const [errorText, setErrorText] = useState(null);
+        const anchorRef = useRef(null);
+        const errorTimer = useRef(null);
+        useEffect(() => () => clearTimeout(errorTimer.current), []);
+        const showError = (text) => {
+          setErrorText(text);
+          clearTimeout(errorTimer.current);
+          errorTimer.current = setTimeout(() => setErrorText(null), FEEDBACK_MS);
+        };
+        const close = () => {
+          setOpen(false);
+          setQuery('');
+        };
+        const vm = modelViewModel(state, t);
+        const busy = state.pending !== null;
+        const waiting = vm.current === null && state.status === 'loading';
+        const modelLabel = waiting ? t('model.loading') : vm.currentModel ? vm.currentModel.name : t('model.triggerEmpty');
+        const triggerLabel = vm.effortName ? modelLabel + ' · ' + vm.effortName : modelLabel;
+        const aria = vm.effortName ? t('model.ariaEffort', { model: modelLabel, effort: vm.effortName }) : t('model.aria', { model: modelLabel });
+        const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
+        const showSearch = totalModels > 6;
+        const needle = query.trim().toLowerCase();
+        const activeId = providerId ?? (vm.current ? vm.current.provider : null) ?? (vm.ordered[0] ? vm.ordered[0].id : null);
+        const activeGroup = vm.ordered.find((group) => group.id === activeId) ?? vm.ordered[0] ?? null;
+        const visibleModels = activeGroup
+          ? activeGroup.models.filter((model) => needle === '' || model.name.toLowerCase().includes(needle) || model.id.toLowerCase().includes(needle))
+          : [];
+        const badgeFor = (model) => (model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(null, model.badge.text)) : null);
+        if (!directory || addressed) return null;
+        const submit = (selection) => {
+          void Promise.resolve(directory.select(selection)).then((result) => {
+            if (result && result.ok === false) {
+              const code = result.error ? result.error.code : '';
+              const message = result.error ? code + ': ' + result.error.message : 'unknown';
+              showError(code === 'session/writer-held' ? t('model.sessionInUse') : t('model.error', { message }));
+            } else if (result && result.ok) {
+              close();
+            }
+          });
+        };
+        const chooseModel = (group, model) => {
+          if (vm.current && vm.current.provider === group.id && vm.current.model === model.id) {
+            close();
+            return;
+          }
+          submit({ provider: group.id, model: model.id });
+        };
+        const chooseEffort = (effort) => {
+          if (!vm.current) return;
+          if (vm.effectiveEffort === effort) {
+            close();
+            return;
+          }
+          submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) });
+        };
+        const retry = () => directory.load().catch(() => { /* 面板内呈现 */ });
+        const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
+        return h(
+          'div',
+          { className: 'dsc-modeldock' },
+          h(
+            'button',
+            {
+              ref: anchorRef,
+              type: 'button',
+              className: 'dsc-capsule',
+              'aria-haspopup': 'dialog',
+              'aria-expanded': open,
+              'aria-label': aria,
+              'aria-busy': busy,
+              title: triggerLabel,
+              disabled: locked,
+              onClick: () => {
+                if (open) close();
+                else {
+                  setOpen(true);
+                  retry();
+                }
+              },
+              style: { '--dsc-anchor': '--dsc-anchor-model-dock' },
+            },
+            h('span', { key: 'icon', className: 'dsc-capsule-icon' }, ICON.chip()),
+            h('span', { key: 'label', className: 'dsc-capsule-label dsc-mrow-name' },
+              vm.currentModel ? h('span', null, badgeFor(vm.currentModel), h('span', null, vm.currentModel.name)) : modelLabel),
+            vm.effortName ? h('span', { key: 'effort', className: 'dsc-modelseat-effort' }, vm.effortName) : null,
+            busy
+              ? h('span', { key: 'busy', className: 'dsc-glyph dsc-glyph--spin dsc-capsule-icon' }, todoGlyph('in_progress'))
+              : h('span', { key: 'chevron', className: 'dsc-capsule-icon' }, ICON.chevronDown()),
+          ),
+          h(
+            Popover,
+            { open, anchorRef, onClose: close, label: aria, anchorName: '--dsc-anchor-model-dock', wide: true },
+            h(
+              'div',
+              { className: 'dsc-modelpop' },
+              h(
+                'div',
+                { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.effort') },
+                vm.ordered.map((group) =>
+                  h(
+                    'button',
+                    {
+                      key: group.id,
+                      type: 'button',
+                      className: 'dsc-mrow',
+                      role: 'option',
+                      'aria-checked': activeGroup ? group.id === activeGroup.id : false,
+                      disabled: busy,
+                      onClick: () => setProviderId(group.id),
+                      title: providerName(group),
+                    },
+                    h('span', { className: 'dsc-mrow-copy' }, h('span', { className: 'dsc-mrow-name' }, providerName(group))),
+                    h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length })),
+                  ),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'dsc-modelpop-main' },
+                showSearch
+                  ? h('input', {
+                      className: 'dsc-modelpop-search',
+                      type: 'search',
+                      placeholder: t('model.searchPlaceholder'),
+                      'aria-label': t('model.searchPlaceholder'),
+                      value: query,
+                      disabled: busy,
+                      onChange: (event) => setQuery(event.target.value),
+                    })
+                  : null,
+                state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
+                state.error !== null
+                  ? h('div', { className: 'dsc-modelpop-error' },
+                      h('span', null, t('model.error', { message: state.error })),
+                      h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
+                  : null,
+                state.failures.map((failure) =>
+                  h('div', { className: 'dsc-modelpop-note', key: failure.id },
+                    (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                ),
+                activeGroup === null || (state.status === 'ready' && totalModels === 0)
+                  ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
+                  : visibleModels.length === 0 && needle !== ''
+                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.searchEmpty'))
+                    : visibleModels.map((model) => {
+                        const selected = vm.current !== null && activeGroup.id === vm.current.provider && model.id === vm.current.model;
+                        const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
+                        return h(
+                          'button',
+                          {
+                            key: model.id,
+                            type: 'button',
+                            className: 'dsc-mrow',
+                            role: 'menuitemradio',
+                            'aria-checked': selected,
+                            disabled: busy,
+                            title: model.name,
+                            onClick: () => chooseModel(activeGroup, model),
+                          },
+                          h('span', { className: 'dsc-mrow-copy' },
+                            placementBadge(model, 'option', badgeFor),
+                            h('span', null, model.name)),
+                          h('span', { className: 'dsc-mrow-check' },
+                            pendingRow
+                              ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
+                              : selected
+                                ? ICON.done()
+                                : null),
+                        );
+                      }),
+              ),
+              vm.reasoning === undefined && vm.currentModel ? null : vm.effortPills.length > 0
+                ? h(
+                    'div',
+                    { className: 'dsc-modelpop-foot' },
+                    h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
+                    h(
+                      'div',
+                      { className: 'dsc-effort', role: 'radiogroup', 'aria-label': t('model.effort') },
+                      vm.effortPills.map((pill) =>
+                        h('button', {
+                          key: pill.key,
+                          type: 'button',
+                          className: 'dsc-effort-pill',
+                          role: 'radio',
+                          'aria-checked': vm.effectiveEffort === pill.effort,
+                          disabled: busy || !vm.current,
+                          onClick: () => chooseEffort(pill.effort),
+                        }, pill.label),
+                      ),
+                    ),
+                  )
+                : null,
+              errorText ? h('div', { className: 'dsc-modelpop-error', role: 'alert' }, errorText) : null,
+            ),
+          ),
+        );
+      }
+
+      /** 模型行徽标（option 位置：名字后面）。 */
+      function placementBadge(model, placement, badgeFor) {
+        return placement === 'trigger' ? null : badgeFor(model);
       }
 
       // ------------------------------------------------------------------
@@ -1846,7 +2107,7 @@
       // ------------------------------------------------------------------
 
       function StatusRow(props) {
-        const { sessionId, useProjection, useSessions, useSession, useSessionStatus, useConversation, t: tProp, jobs, actions, lang } = props;
+        const { sessionId, useProjection, useSessions, useSession, useSessionStatus, useConversation, t: tProp, jobs, actions, lang, models, sessions: sessionsService } = props;
         const t = useMemo(() => makeT(tProp, lang), [tProp, lang]);
         const todoValue = useProjection('todos');
         const projections = useSessions(selectProjections);
@@ -1902,6 +2163,16 @@
                 onClose: close,
                 actions,
                 t,
+              })
+            : null,
+          models && sessionsService && sessionId
+            ? h(ModelDockCapsule, {
+                key: 'modeldock',
+                sessionId,
+                models,
+                sessions: sessionsService,
+                t,
+                locked: false,
               })
             : null,
         );
@@ -2050,10 +2321,21 @@
 
           let disposeDock = null;
           let alive = true;
+          let currentJobs = undefined;
+          let dockServices = null; // { models, sessions } — 模型目录服务到位后重挂 dock，模型胶囊随之出现
           /** （重新）注册 dock 条目；jobs 服务晚到时带上它重挂一次。 */
           const mount = (jobs) => {
+            currentJobs = jobs;
             if (disposeDock) disposeDock();
-            const entryProps = (props) => ({ ...props, jobs, actions, lang, t });
+            const entryProps = (props) => ({
+              ...props,
+              jobs,
+              actions,
+              lang,
+              t,
+              models: dockServices ? dockServices.models : null,
+              sessions: dockServices ? dockServices.sessions : null,
+            });
             disposeDock = ctx.slots.inject(SLOT, () =>
               ctx.slots.register({ name: SLOT, id: TODO_ID, priority: TODO_PRIORITY, order: 0, locale: NS }, (props) =>
                 h(StatusBoundary, { fallbackProps: entryProps(props) }, h(StatusDock, entryProps(props)))),
@@ -2084,54 +2366,66 @@
           });
           // 回合收尾扩展位实验（v0.2.5/0.2.6）已撤：每个完成回合的收尾行都会出现一枚
           // 悬空的刷新图标，观感突兀；刷新按钮回到 dock 行最左（见 StatusRow）。
-          // 模型选择座位：以更低的 priority 压过内置 seat（ZCode 风格双栏 + 推理等级）。
-          // 目录状态与提交动作复用宿主 modelDirectories 服务——与 /model 弹窗共享同一份
-          // 会话状态，任何一边切换另一边即时同步。children 不在这里重复声明（ledger 里
-          // 宿主已声明，重复声明会验证失败导致条目被弃用）；服务未挂载时不注入，
-          // 内置 seat 原样保留。
-          const mountModelSeat = (models, sessions) => {
-            ctx.slots.inject('conversation.input.model', () =>
-              ctx.slots.register(
-                {
-                  name: 'conversation.input.model',
-                  id: PLUGIN_ID + '-model-seat',
-                  priority: -1,
-                  order: 0,
-                  locale: NS,
-                  inject: (sessionId) => {
-                    let directory;
-                    let seatAvailable = false;
-                    let seatFailed = false;
-                    try {
-                      directory = models.directoryFor(sessionId);
-                      seatAvailable = sessions.subagentAddress(sessionId) === undefined;
-                    } catch (error) {
-                      // 目录解析失败 ≠ 子代理会话的「合理隐藏」：标记失败，让组件在渲染时
-                      // 显式抛错弃用条目，把座位还给内置选择器，而不是静默画空。
-                      directory = undefined;
-                      seatAvailable = true;
-                      seatFailed = true;
-                    }
-                    return {
-                      available: seatAvailable,
-                      seatFailed,
-                      directory: seatAvailable && !seatFailed ? directory : undefined,
-                      load: () => {
-                        if (seatAvailable && directory) directory.load().catch(() => { /* 面板内呈现 */ });
+          // 模型目录服务到位后：① dock 重挂出「模型」胶囊（100% 可靠的入口）；
+          // ② 尝试替换 composer 自带的模型座位（同一份目录状态，双入口即时同步）。
+          // 座位槽位的选举由宿主控制、逐页表现不一——dock 胶囊是保底入口。
+          const setupModelServices = (models, sessions) => {
+            dockServices = { models, sessions };
+            mount(currentJobs);
+            const mountModelSeat = () => {
+              ctx.slots.inject('conversation.input.model', () => {
+                try {
+                  return ctx.slots.register(
+                    {
+                      name: 'conversation.input.model',
+                      id: PLUGIN_ID + '-model-seat',
+                      priority: -1,
+                      order: 0,
+                      locale: NS,
+                      inject: (sessionId) => {
+                        let directory;
+                        let seatAvailable = false;
+                        let seatFailed = false;
+                        try {
+                          directory = models.directoryFor(sessionId);
+                          seatAvailable = sessions.subagentAddress(sessionId) === undefined;
+                        } catch (error) {
+                          // 目录解析失败 ≠ 子代理会话的「合理隐藏」：标记失败，让组件在渲染时
+                          // 显式抛错弃用条目，把座位还给内置选择器，而不是静默画空。
+                          directory = undefined;
+                          seatAvailable = true;
+                          seatFailed = true;
+                        }
+                        return {
+                          available: seatAvailable,
+                          seatFailed,
+                          directory: seatAvailable && !seatFailed ? directory : undefined,
+                          load: () => {
+                            if (seatAvailable && directory) directory.load().catch(() => { /* 面板内呈现 */ });
+                          },
+                          resolveText: (text) => badgeText(ctx.locale && typeof ctx.locale.resolveText === 'function' ? ctx.locale.resolveText : undefined, text),
+                          select: (selection) => (seatAvailable && directory ? directory.select(selection) : Promise.resolve(undefined)),
+                        };
                       },
-                      resolveText: (text) => badgeText(ctx.locale && typeof ctx.locale.resolveText === 'function' ? ctx.locale.resolveText : undefined, text),
-                      select: (selection) => (seatAvailable && directory ? directory.select(selection) : Promise.resolve(undefined)),
-                    };
-                  },
-                },
-                (props) => h(ModelSeat, props),
-              ),
-            );
+                    },
+                    (props) => h(ModelSeat, props),
+                  );
+                } catch (error) {
+                  console.error('[' + PLUGIN_ID + '] model seat registration failed', error);
+                  return undefined;
+                }
+              });
+            };
+            try {
+              mountModelSeat();
+            } catch (seatError) {
+              console.error('[' + PLUGIN_ID + '] model seat registration failed', seatError);
+            }
           };
           try {
-            mountModelSeat(ctx.modelDirectories, ctx.sessions);
+            setupModelServices(ctx.modelDirectories, ctx.sessions);
           } catch (error) {
-            ctx.inject(['modelDirectories', 'sessions'], (scope) => mountModelSeat(scope.modelDirectories, scope.sessions));
+            ctx.inject(['modelDirectories', 'sessions'], (scope) => setupModelServices(scope.modelDirectories, scope.sessions));
           }
         },
       };
