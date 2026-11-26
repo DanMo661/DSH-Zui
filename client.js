@@ -1312,7 +1312,7 @@
                   retry();
                 }
               },
-              style: { '--dsc-anchor': '--dsc-anchor-model' },
+              style: { '--dsc-anchor': '--dsc-anchor-model', borderColor: 'var(--dsw-alias-brand-primary)' },
             },
             h('span', { key: 'icon', className: 'dsc-capsule-icon' }, ICON.chip()),
             h('span', { key: 'label', className: 'dsc-capsule-label dsc-mrow-name' },
@@ -1866,9 +1866,24 @@
         const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || openId === 'activity';
         // 打开期间不因数据瞬空强制关闭：待办被模型清空时浮层显示空态，由用户自行收起。
         if (!showTodo && !showActivity) return null;
+        const reload = () => {
+          try {
+            window.location.reload();
+          } catch (error) {
+            /* 忽略：极端环境下无法刷新 */
+          }
+        };
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-row': '' },
+          h('button', {
+            key: 'refresh',
+            type: 'button',
+            className: 'dsc-refresh',
+            title: t('refresh.title'),
+            'aria-label': t('refresh.title'),
+            onClick: reload,
+          }, ICON.refresh()),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -1890,23 +1905,6 @@
               })
             : null,
         );
-      }
-
-      /** 回合收尾扩展位（「20 轮…」状态行的左边）上的刷新页面按钮。 */
-      function TurnTailRefresh({ t }) {
-        return h('button', {
-          type: 'button',
-          className: 'dsc-refresh',
-          title: t('refresh.title'),
-          'aria-label': t('refresh.title'),
-          onClick: () => {
-            try {
-              window.location.reload();
-            } catch (error) {
-              /* 忽略：极端环境下无法刷新 */
-            }
-          },
-        }, ICON.refresh());
       }
 
       /** slot 条目：标准 props 不齐（极旧的 DSH）时退回最简待办胶囊。 */
@@ -2084,28 +2082,8 @@
           ctx.slots.inject('conversation.chat.node', () => {
             ctx.slots.register({ name: 'conversation.chat.node', key: 'turn-trigger', priority: -1, locale: NS }, (props) => h(TriggerNode, props));
           });
-          // 回合收尾扩展位（「20 轮…」状态行的左边）：官方 extension tail 列表槽，
-          // 放一枚刷新页面按钮——应用没绑 Ctrl+R，插件/样式没同步时一键整页重载。
-          // 注意：turnTail 是纯扩展槽，宿主从不注册条目，键的声明要靠第一次
-          // register 创建——不能用 slots.inject（它会等一个永远不会自己出现的
-          // 声明，按钮就永远不渲染——已踩坑）；注册被拒时再退回等待声明。
-          const mountTurnTailRefresh = () =>
-            ctx.slots.register(
-              { name: 'conversation.chat.turnTail', id: PLUGIN_ID + '-refresh', priority: -1, locale: NS },
-              (props) => h(TurnTailRefresh, props),
-            );
-          try {
-            mountTurnTailRefresh();
-          } catch (error) {
-            ctx.slots.inject('conversation.chat.turnTail', () => {
-              try {
-                return mountTurnTailRefresh();
-              } catch (nested) {
-                console.error('[' + PLUGIN_ID + '] turnTail refresh registration failed', nested);
-                throw nested;
-              }
-            });
-          }
+          // 回合收尾扩展位实验（v0.2.5/0.2.6）已撤：每个完成回合的收尾行都会出现一枚
+          // 悬空的刷新图标，观感突兀；刷新按钮回到 dock 行最左（见 StatusRow）。
           // 模型选择座位：以更低的 priority 压过内置 seat（ZCode 风格双栏 + 推理等级）。
           // 目录状态与提交动作复用宿主 modelDirectories 服务——与 /model 弹窗共享同一份
           // 会话状态，任何一边切换另一边即时同步。children 不在这里重复声明（ledger 里
