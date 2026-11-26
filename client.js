@@ -819,12 +819,14 @@
             h('g', { key: 'eyes', className: 'dsc-face-eyes', fill: ink, style: dots ? undefined : { animationDelay: ((hash % 34) / -10).toFixed(1) + 's' } }, eyes),
             state === 'done' || state === 'ended'
               ? h('g', { key: 'badge', fill: 'none' }, [
-                  h('circle', { key: 'halo', cx: 3, cy: 17, r: 5.5, fill: 'var(--dsc-face-ring)' }),
+                  // 徽标整体画在 viewBox 之内（圆心 5,15 半径 5）——overflow:visible 的脸
+                  // 曾经把徽标圆戳出方形 2.5 单位，在胶囊头像堆里压到左缘圆角上（穿模）。
+                  h('circle', { key: 'halo', cx: 5, cy: 15, r: 5, fill: 'var(--dsc-face-ring)' }),
                   h('circle', {
                     key: 'disc',
-                    cx: 3,
-                    cy: 17,
-                    r: 5.5,
+                    cx: 5,
+                    cy: 15,
+                    r: 5,
                     fill: state === 'done' ? 'var(--dsw-alias-state-success-primary)' : 'var(--dsw-alias-label-tertiary)',
                     stroke: 'var(--dsc-face-ring)',
                     strokeWidth: 1.5,
@@ -832,13 +834,13 @@
                   state === 'done'
                     ? h('path', {
                         key: 'check',
-                        d: 'M0.6 17l1.6 1.6 3.2-3.3',
+                        d: 'M2.6 15.2l1.5 1.5 3-3.1',
                         stroke: 'var(--dsw-alias-label-on-accent,#fff)',
                         strokeWidth: 1.5,
                         strokeLinecap: 'round',
                         strokeLinejoin: 'round',
                       })
-                    : h('rect', { key: 'square', x: 1.2, y: 15.2, width: 3.6, height: 3.6, rx: 0.6, fill: 'var(--dsw-specific-menu)' }),
+                    : h('rect', { key: 'square', x: 3.2, y: 13.2, width: 3.6, height: 3.6, rx: 0.6, fill: 'var(--dsw-specific-menu)' }),
                 ])
               : null,
           ],
@@ -1164,7 +1166,9 @@
         return '';
       }
 
-      function ModelSeat({ locked, available, directory, load, select, resolveText, t, renderSlot }) {
+      function ModelSeat({ locked, available, seatFailed, directory, load, select, resolveText, t, renderSlot }) {
+        // 目录解析失败时显式抛错 → 条目弃用 → 内置选择器接管（渲染 null 会把座位顶没）。
+        if (seatFailed) throw new Error('model directory unavailable - yielding seat to the built-in picker');
         const state = useSyncExternalStore(
           directory ? (listener) => directory.subscribe(listener) : () => () => {},
           directory ? () => directory.getSnapshot() : () => EMPTY_DIRECTORY,
@@ -2051,16 +2055,21 @@
                   inject: (sessionId) => {
                     let directory;
                     let seatAvailable = false;
+                    let seatFailed = false;
                     try {
                       directory = models.directoryFor(sessionId);
                       seatAvailable = sessions.subagentAddress(sessionId) === undefined;
                     } catch (error) {
+                      // 目录解析失败 ≠ 子代理会话的「合理隐藏」：标记失败，让组件在渲染时
+                      // 显式抛错弃用条目，把座位还给内置选择器，而不是静默画空。
                       directory = undefined;
-                      seatAvailable = false;
+                      seatAvailable = true;
+                      seatFailed = true;
                     }
                     return {
                       available: seatAvailable,
-                      directory: seatAvailable ? directory : undefined,
+                      seatFailed,
+                      directory: seatAvailable && !seatFailed ? directory : undefined,
                       load: () => {
                         if (seatAvailable && directory) directory.load().catch(() => { /* 面板内呈现 */ });
                       },
