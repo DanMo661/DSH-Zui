@@ -106,6 +106,7 @@
       'model.sessionInUse': '当前会话已被占用，可能是其他正在运行的 DSH 导致的，请退出其他正在运行的 DSH 后重试。',
       'model.accountProvider': 'DeepSeek 账号',
       'model.count': '{count} 个模型',
+      'team.toggle': '启用智能体团队协作',
       'trigger.request': '收到执行请求',
       'trigger.continue': '收到继续请求',
       'trigger.goal': '继续执行目标',
@@ -182,6 +183,7 @@
       'model.sessionInUse': 'This session is already in use. Quit other running DSH instances and try again.',
       'model.accountProvider': 'DeepSeek Account',
       'model.count': '{count} models',
+      'team.toggle': 'Enable agent team collaboration',
       'trigger.request': 'Received a run request',
       'trigger.continue': 'Received a continue request',
       'trigger.goal': 'Goal continuation',
@@ -363,6 +365,34 @@
     // ---- 插件不在/卸载后原版座位自动恢复，功能不丢。
     'body.dsc-has-model-picker button[style*="--dsh-model-anchor"]{display:none !important}',
     '.dsc-seatdebug{flex:none;margin-left:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
+    // ---- 思考强度滑杆（ZCode composer-thought-slider 移植）----
+    '.dsc-slider-row{display:flex;align-items:center;gap:10px;min-width:0}',
+    '.dsc-slider-label{flex:none;font-size:12px;color:var(--dsw-alias-label-secondary)}',
+    '.dsc-slider-wrap{position:relative;flex:1;min-width:0;height:32px}',
+    '.dsc-slider-track{position:absolute;left:0;right:0;top:8px;bottom:8px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.18));overflow:hidden}',
+    '.dsc-slider-fill{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:var(--dsw-alias-state-success-primary);transition:width 120ms ease-out}',
+    '.dsc-slider-fill::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity 200ms ease-out;background:linear-gradient(270deg in oklch shorter hue,var(--dsw-alias-brand-primary) 0%,var(--dsw-alias-state-success-primary) 100%)}',
+    '.dsc-slider-track[data-max=true] .dsc-slider-fill::before{opacity:1}',
+    '.dsc-slider-bubbles{position:absolute;inset:0;overflow:hidden;pointer-events:none}',
+    '.dsc-slider-bubble{position:absolute;border-radius:50%;background:#fff;opacity:0;animation:dsc-bubble-flow linear infinite}',
+    '@keyframes dsc-bubble-flow{0%{transform:translateX(104%);opacity:0}15%,80%{opacity:.4}100%{transform:translateX(-4%);opacity:0}}',
+    '.dsc-slider-stops{position:absolute;left:14px;right:14px;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none}',
+    '.dsc-slider-stop{width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-label-dimmed,rgba(0,0,0,.28));transition:background 120ms ease-out}',
+    '.dsc-slider-stop[data-filled=true]{background:#fff;opacity:.45}',
+    '.dsc-slider-thumb{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.28);transition:left 120ms ease-out;pointer-events:none}',
+    '.dsc-slider-range{position:absolute;inset:0;margin:0;width:100%;height:100%;appearance:none;-webkit-appearance:none;background:transparent;outline:none;cursor:pointer}',
+    '.dsc-slider-range::-webkit-slider-runnable-track{height:32px;background:transparent}',
+    '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:28px;height:28px;border:0;border-radius:50%;background:transparent}',
+    '@media (prefers-reduced-motion:reduce){.dsc-slider-bubble{animation:none}.dsc-slider-fill,.dsc-slider-fill::before,.dsc-slider-thumb,.dsc-slider-stop{transition:none}}',
+    // ---- 团队协作开关行 ----
+    '.dsc-teamrow{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 2px 2px;border-top:0.5px solid var(--dsw-alias-border-l1);margin-top:4px}',
+    '.dsc-teamrow-label{flex:1;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary)}',
+    '.dsc-switch{flex:none;position:relative;display:inline-flex;align-items:center;width:40px;height:22px;padding:0;border:0;border-radius:999px;background:var(--dsw-alias-border-l2,rgba(127,127,127,.35));cursor:pointer;transition:background .15s ease}',
+    '.dsc-switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}',
+    '.dsc-switch:disabled{opacity:.5;cursor:default}',
+    '.dsc-switch-knob{position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s ease}',
+    '.dsc-switch[aria-checked=true] .dsc-switch-knob{transform:translateX(18px)}',
+    '.dsc-switch:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
   ].join('');
@@ -1190,16 +1220,18 @@
         return '';
       }
 
-      function ModelSeat({ locked, available, seatFailed, directory, load, select, resolveText, t, renderSlot }) {
+      function ModelSeat({ locked, available, seatFailed, directory, load, select, resolveText, t, renderSlot, useProjection, onTeamToggle }) {
         // 目录解析失败时显式抛错 → 条目弃用 → 内置选择器接管（渲染 null 会把座位顶没）。
         if (seatFailed) throw new Error('model directory unavailable - yielding seat to the built-in picker');
         const state = useSyncExternalStore(
           directory ? (listener) => directory.subscribe(listener) : () => () => {},
           directory ? () => directory.getSnapshot() : () => EMPTY_DIRECTORY,
         );
+        const teamMode = typeof useProjection === 'function' ? useProjection('agentTeam') : undefined;
+        const teamEnabled = teamMode && typeof teamMode === 'object' ? teamMode.enabled === true : undefined;
+        const [teamPending, setTeamPending] = useState(false);
         const [open, setOpen] = useState(false);
         const [providerId, setProviderId] = useState(null);
-        const [query, setQuery] = useState('');
         const [errorText, setErrorText] = useState(null);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
@@ -1211,7 +1243,6 @@
         };
         const close = () => {
           setOpen(false);
-          setQuery('');
         };
 
         const current = state.current;
@@ -1233,10 +1264,6 @@
         const ordered = orderProviders(state.groups);
         const activeId = providerId ?? (current ? current.provider : null) ?? (ordered[0] ? ordered[0].id : null);
         const activeGroup = ordered.find((group) => group.id === activeId) ?? ordered[0] ?? null;
-        const needle = query.trim().toLowerCase();
-        const visibleModels = activeGroup
-          ? activeGroup.models.filter((model) => needle === '' || model.name.toLowerCase().includes(needle) || model.id.toLowerCase().includes(needle))
-          : [];
         const busy = state.pending !== null;
         const waiting = current === null && state.status === 'loading';
         const modelLabel = waiting ? t('model.loading') : currentModel ? currentModel.name : t('model.triggerEmpty');
@@ -1247,7 +1274,6 @@
           ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
         ];
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
-        const showSearch = totalModels > 6;
 
         if (!available || !directory) return null;
 
@@ -1362,17 +1388,6 @@
               h(
                 'div',
                 { className: 'dsc-modelpop-main' },
-                totalModels > 6
-                  ? h('input', {
-                      className: 'dsc-modelpop-search',
-                      type: 'search',
-                      placeholder: t('model.searchPlaceholder'),
-                      'aria-label': t('model.searchPlaceholder'),
-                      value: query,
-                      disabled: busy,
-                      onChange: (event) => setQuery(event.target.value),
-                    })
-                  : null,
                 state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
                 state.error !== null
                   ? h('div', { className: 'dsc-modelpop-error' },
@@ -1385,9 +1400,7 @@
                 ),
                 activeGroup === null || (state.status === 'ready' && totalModels === 0)
                   ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
-                  : visibleModels.length === 0 && needle !== ''
-                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.searchEmpty'))
-                    : visibleModels.map((model) => {
+                  : activeGroup.models.map((model) => {
                         const selected = current !== null && activeGroup.id === current.provider && model.id === current.model;
                         const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
                         return h(
@@ -1415,23 +1428,16 @@
               reasoning === undefined && currentModel ? null : effortPills.length > 0
                 ? h(
                     'div',
-                    { className: 'dsc-modelpop-foot' },
+                    { className: 'dsc-modelpop-foot dsc-modelpop-foot-up' },
                     h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                    h(
-                      'div',
-                      { className: 'dsc-effort', role: 'radiogroup', 'aria-label': t('model.effort') },
-                      effortPills.map((pill) =>
-                        h('button', {
-                          key: pill.key,
-                          type: 'button',
-                          className: 'dsc-effort-pill',
-                          role: 'radio',
-                          'aria-checked': effectiveEffort === pill.effort,
-                          disabled: busy || !current,
-                          onClick: () => chooseEffort(pill.effort),
-                        }, pill.label),
-                      ),
-                    ),
+                    h(EffortSlider, {
+                      levels: effortPills,
+                      valueIndex: Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort)),
+                      onPick: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
+                      disabled: busy || !current,
+                      ariaLabel: t('model.effort'),
+                      valueName: effortName,
+                    }),
                   )
                 : null,
               typeof renderSlot === 'function'
@@ -1440,6 +1446,27 @@
                     dismiss: close,
                     reportFailure: showError,
                   })
+                : null,
+              teamEnabled !== undefined
+                ? h(
+                    'div',
+                    { className: 'dsc-teamrow' },
+                    h('span', { className: 'dsc-teamrow-label' }, t('team.toggle')),
+                    h('button', {
+                      type: 'button',
+                      className: 'dsc-switch',
+                      role: 'switch',
+                      'aria-checked': teamEnabled === true,
+                      'aria-label': t('team.toggle'),
+                      disabled: busy || teamPending,
+                      onClick: () => {
+                        setTeamPending(true);
+                        Promise.resolve(onTeamToggle(!(teamEnabled === true))).then((failure) => {
+                          if (failure) showError(String(failure));
+                        }).finally(() => setTeamPending(false));
+                      },
+                    }, h('span', { className: 'dsc-switch-knob' })),
+                  )
                 : null,
               errorText ? h('div', { className: 'dsc-modelpop-error', role: 'alert' }, errorText) : null,
             ),
@@ -1479,7 +1506,72 @@
         return { current, currentModel, reasoning, effectiveEffort, effortName, ordered, effortPills };
       }
 
-      function ModelDockCapsule({ sessionId, models, sessions, t, locked }) {
+      // ZCode 开源（zai-org/zcode，Apache-2.0）composer-thought-slider 的移植：
+      // 渐变只在最高档浮现、气泡从右向左流动、档位圆点、白色圆形滑块。
+      const EFFORT_BUBBLES = [
+        { top: 4, size: 2, duration: 2.6, delay: -0.4 },
+        { top: 14, size: 3, duration: 3.2, delay: -2.1 },
+        { top: 8, size: 4, duration: 2.8, delay: -1.1 },
+        { top: 18, size: 2, duration: 3.6, delay: -0.8 },
+        { top: 3, size: 3, duration: 3, delay: -2.5 },
+        { top: 12, size: 2, duration: 3.4, delay: -1.7 },
+        { top: 6, size: 3, duration: 3.1, delay: -0.9 },
+        { top: 17, size: 4, duration: 2.9, delay: -2.3 },
+        { top: 10, size: 2, duration: 3.5, delay: -0.2 },
+        { top: 2, size: 2, duration: 2.7, delay: -1.8 },
+        { top: 15, size: 3, duration: 3.3, delay: -1.2 },
+        { top: 7, size: 4, duration: 3.6, delay: -3.1 },
+      ];
+
+      function EffortSlider({ levels, valueIndex, onPick, disabled, ariaLabel, valueName }) {
+        const frac = levels.length > 1 ? valueIndex / (levels.length - 1) : 0;
+        const atMax = valueIndex === levels.length - 1;
+        return h('div', { className: 'dsc-slider-wrap' },
+          h('div', { className: 'dsc-slider-track', 'data-max': atMax ? '' : undefined },
+            h('div', { className: 'dsc-slider-fill', style: { width: (levels.length > 1 ? 20 + frac * 80 : 100) + '%' } }),
+            h('div', { className: 'dsc-slider-bubbles', 'aria-hidden': true },
+              EFFORT_BUBBLES.map((bubble, index) =>
+                h('span', {
+                  key: index,
+                  className: 'dsc-slider-bubble',
+                  style: {
+                    top: bubble.top + 'px',
+                    width: bubble.size + 'px',
+                    height: bubble.size + 'px',
+                    animationDuration: bubble.duration + 's',
+                    animationDelay: bubble.delay + 's',
+                  },
+                }),
+              ),
+            ),
+            h('div', { className: 'dsc-slider-stops', 'aria-hidden': true },
+              levels.map((level, index) =>
+                h('span', {
+                  key: level.key,
+                  className: 'dsc-slider-stop',
+                  'data-filled': index <= valueIndex ? '' : undefined,
+                  style: { left: 'calc(' + (levels.length > 1 ? (index / (levels.length - 1)) * 100 : 0) + '% - 2px)' },
+                }),
+              ),
+            ),
+            h('div', { className: 'dsc-slider-thumb', style: { left: 'calc((100% - 28px) * ' + frac + ')' } }),
+          ),
+          h('input', {
+            className: 'dsc-slider-range',
+            type: 'range',
+            min: 0,
+            max: Math.max(0, levels.length - 1),
+            step: 1,
+            value: valueIndex,
+            'aria-label': ariaLabel,
+            'aria-valuetext': valueName,
+            disabled: disabled ?? false,
+            onChange: (event) => onPick(Number(event.target.value)),
+          }),
+        );
+      }
+
+      function ModelDockCapsule({ sessionId, models, sessions, t, locked, teamEnabled, onTeamToggle }) {
         const controller = useMemo(() => {
           try {
             return models.directoryFor(sessionId);
@@ -1502,8 +1594,8 @@
         );
         const [open, setOpen] = useState(false);
         const [providerId, setProviderId] = useState(null);
-        const [query, setQuery] = useState('');
         const [errorText, setErrorText] = useState(null);
+        const [teamPending, setTeamPending] = useState(false);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
@@ -1521,7 +1613,6 @@
         };
         const close = () => {
           setOpen(false);
-          setQuery('');
         };
         const vm = modelViewModel(state, t);
         const busy = state.pending !== null;
@@ -1530,13 +1621,8 @@
         const triggerLabel = vm.effortName ? modelLabel + ' · ' + vm.effortName : modelLabel;
         const aria = vm.effortName ? t('model.ariaEffort', { model: modelLabel, effort: vm.effortName }) : t('model.aria', { model: modelLabel });
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
-        const showSearch = totalModels > 6;
-        const needle = query.trim().toLowerCase();
         const activeId = providerId ?? (vm.current ? vm.current.provider : null) ?? (vm.ordered[0] ? vm.ordered[0].id : null);
         const activeGroup = vm.ordered.find((group) => group.id === activeId) ?? vm.ordered[0] ?? null;
-        const visibleModels = activeGroup
-          ? activeGroup.models.filter((model) => needle === '' || model.name.toLowerCase().includes(needle) || model.id.toLowerCase().includes(needle))
-          : [];
         const badgeFor = (model) => (model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(null, model.badge.text)) : null);
         if (!directory || !controller || addressed) return null;
         const submit = (selection) => {
@@ -1629,17 +1715,6 @@
               h(
                 'div',
                 { className: 'dsc-modelpop-main' },
-                showSearch
-                  ? h('input', {
-                      className: 'dsc-modelpop-search',
-                      type: 'search',
-                      placeholder: t('model.searchPlaceholder'),
-                      'aria-label': t('model.searchPlaceholder'),
-                      value: query,
-                      disabled: busy,
-                      onChange: (event) => setQuery(event.target.value),
-                    })
-                  : null,
                 state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
                 state.error !== null
                   ? h('div', { className: 'dsc-modelpop-error' },
@@ -1652,9 +1727,7 @@
                 ),
                 activeGroup === null || (state.status === 'ready' && totalModels === 0)
                   ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
-                  : visibleModels.length === 0 && needle !== ''
-                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.searchEmpty'))
-                    : visibleModels.map((model) => {
+                  : activeGroup.models.map((model) => {
                         const selected = vm.current !== null && activeGroup.id === vm.current.provider && model.id === vm.current.model;
                         const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
                         return h(
@@ -1684,23 +1757,37 @@
               vm.reasoning === undefined && vm.currentModel ? null : vm.effortPills.length > 0
                 ? h(
                     'div',
-                    { className: 'dsc-modelpop-foot' },
+                    { className: 'dsc-modelpop-foot dsc-modelpop-foot-up' },
                     h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                    h(
-                      'div',
-                      { className: 'dsc-effort', role: 'radiogroup', 'aria-label': t('model.effort') },
-                      vm.effortPills.map((pill) =>
-                        h('button', {
-                          key: pill.key,
-                          type: 'button',
-                          className: 'dsc-effort-pill',
-                          role: 'radio',
-                          'aria-checked': vm.effectiveEffort === pill.effort,
-                          disabled: busy || !vm.current,
-                          onClick: () => chooseEffort(pill.effort),
-                        }, pill.label),
-                      ),
-                    ),
+                    h(EffortSlider, {
+                      levels: vm.effortPills,
+                      valueIndex: Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort)),
+                      onPick: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
+                      disabled: busy || !vm.current,
+                      ariaLabel: t('model.effort'),
+                      valueName: vm.effortName,
+                    }),
+                  )
+                : null,
+              teamEnabled !== undefined
+                ? h(
+                    'div',
+                    { className: 'dsc-teamrow' },
+                    h('span', { className: 'dsc-teamrow-label' }, t('team.toggle')),
+                    h('button', {
+                      type: 'button',
+                      className: 'dsc-switch',
+                      role: 'switch',
+                      'aria-checked': teamEnabled === true,
+                      'aria-label': t('team.toggle'),
+                      disabled: busy || teamPending,
+                      onClick: () => {
+                        setTeamPending(true);
+                        Promise.resolve(onTeamToggle(!(teamEnabled === true))).then((failure) => {
+                          if (failure) showError(String(failure));
+                        }).finally(() => setTeamPending(false));
+                      },
+                    }, h('span', { className: 'dsc-switch-knob' })),
                   )
                 : null,
               errorText ? h('div', { className: 'dsc-modelpop-error', role: 'alert' }, errorText) : null,
@@ -2143,24 +2230,9 @@
         const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || openId === 'activity';
         // 打开期间不因数据瞬空强制关闭：待办被模型清空时浮层显示空态，由用户自行收起。
         if (!showTodo && !showActivity) return null;
-        const reload = () => {
-          try {
-            window.location.reload();
-          } catch (error) {
-            /* 忽略：极端环境下无法刷新 */
-          }
-        };
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-row': '' },
-          h('button', {
-            key: 'refresh',
-            type: 'button',
-            className: 'dsc-refresh',
-            title: t('refresh.title'),
-            'aria-label': t('refresh.title'),
-            onClick: reload,
-          }, ICON.refresh()),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -2221,19 +2293,6 @@
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-fallback': '' },
-          h('button', {
-            type: 'button',
-            className: 'dsc-refresh',
-            title: t('refresh.title'),
-            'aria-label': t('refresh.title'),
-            onClick: () => {
-              try {
-                window.location.reload();
-              } catch (error) {
-                /* 忽略 */
-              }
-            },
-          }, ICON.refresh()),
           h(
             'button',
             { type: 'button', className: 'dsc-capsule', 'aria-label': 'dsc-status: ' + message, title: message },
@@ -2322,6 +2381,11 @@
               } catch (error) {
                 /* 目标不可用时静默：目录行保持可展开，再点一次即可 */
               }
+            },
+            agentTeamsSetEnabled(targetSessionId, enabled) {
+              const teams = ctx.remote?.agentTeams;
+              if (!teams || typeof teams.setEnabled !== 'function') return { ok: false, error: { message: 'agentTeams service unavailable' } };
+              return teams.setEnabled(targetSessionId, enabled);
             },
           };
 
