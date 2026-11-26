@@ -162,9 +162,11 @@
     '@media (prefers-reduced-motion:reduce){.dsc-face[data-state=running] .dsc-face-eyes{animation:none}}',
     // ---- 浮层：portal 到 body，CSS 锚点定位（与 DSH 自带菜单同一机制）----
     // 触发胶囊带 --dsc-anchor 变量（CSS 里展开为 anchor-name），portal 出来的面板带
-    // position-anchor 并用 anchor() 写 inset：自动居中于胶囊上方，受布局视口约束，
+    // position-anchor，用 left:anchor(center) + translate:-50% 把面板水平居中在胶囊
+    // 正上方（right/justify-self 写法会被 Chromium 当作过约束忽略，导致面板贴死在
+    // 胶囊左缘——已踩坑）。胶囊太靠边时由 Popover 里的 usePopoverClamp 补像素位移，
     // 浏览器缩放/滚动时跟随。不支持锚点定位的旧内核回退到 JS 定位（见 Popover）。
-    '.dsc-popover{z-index:1100;box-sizing:border-box;position:fixed;position-anchor:var(--dsc-anchor);bottom:calc(anchor(top) + 8px);left:anchor(left);right:anchor(right);justify-self:anchor-center;width:fit-content;min-width:min(280px,100vw - 24px);max-width:min(340px,100vw - 24px);max-height:min(60dvh,calc(100dvh - 128px));overflow:hidden auto;padding:6px;border-radius:var(--dsw-radius-lg);background:var(--dsw-specific-menu);backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;cursor:default;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}',
+    '.dsc-popover{z-index:1100;box-sizing:border-box;position:fixed;position-anchor:var(--dsc-anchor);bottom:calc(anchor(top) + 8px);left:anchor(center);translate:-50% 0;width:fit-content;min-width:min(280px,100vw - 24px);max-width:min(340px,100vw - 24px);max-height:min(60dvh,calc(100dvh - 128px));overflow:hidden auto;padding:6px;border-radius:var(--dsw-radius-lg);background:var(--dsw-specific-menu);backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;cursor:default;--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}',
     '.dsc-head{display:flex;align-items:center;gap:6px;min-height:32px;padding:2px 4px 6px 2px;font-weight:500;color:var(--dsw-alias-label-primary)}',
     '.dsc-back{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:999px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}',
     '@media(hover:hover){.dsc-back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}',
@@ -468,10 +470,10 @@
       // （测量锚点与面板矩形，跟随滚动 / 缩放，约束在视口内）。
       // ------------------------------------------------------------------
 
-      function fallbackAnchoredPosition({ open, anchorRef, panelRef }) {
+      function fallbackAnchoredPosition({ open, anchorRef, panelRef, enabled }) {
         const [position, setPosition] = useState(null);
         useLayoutEffect(() => {
-          if (!open) {
+          if (!open || !enabled) {
             setPosition(null);
             return undefined;
           }
@@ -480,19 +482,61 @@
             const panel = panelRef.current;
             if (!anchor || !panel) return;
             const margin = 12;
-            const left = Math.max(margin, Math.min(anchor.left, window.innerWidth - margin - panel.offsetWidth));
+            const width = panel.offsetWidth;
+            // 水平：面板中心对齐胶囊中心，再约束在视口内；垂直：底边悬在胶囊上方 8px。
+            const idealLeft = anchor.left + anchor.width / 2 - width / 2;
+            const left = Math.max(margin, Math.min(idealLeft, window.innerWidth - margin - width));
             const top = Math.max(margin, anchor.top - 8 - panel.offsetHeight);
             setPosition((current) => (current && current.left === left && current.top === top ? current : { left, top }));
           };
           place();
+          // 内容增删（子代理完成、行数变化）会改面板宽度，用 RO 重新落位。
+          const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+          if (observer && panelRef.current) observer.observe(panelRef.current);
           window.addEventListener('resize', place);
           window.addEventListener('scroll', place, true);
           return () => {
+            if (observer) observer.disconnect();
             window.removeEventListener('resize', place);
             window.removeEventListener('scroll', place, true);
           };
-        }, [open]);
+        }, [open, enabled, anchorRef, panelRef]);
         return position;
+      }
+
+      /**
+       * CSS 锚点定位路径的水平夹取：面板靠 left:anchor(center) + translate:-50% 居中在
+       * 胶囊上方，但胶囊贴近视口边缘时面板会伸出去；这里量一下理想位置，超出视口就返回
+       * 一个像素级补偿值（拼进 translate），把面板整体拉回视口内。
+       */
+      function usePopoverClamp({ open, anchorRef, panelRef, enabled }) {
+        const [shift, setShift] = useState(0);
+        useLayoutEffect(() => {
+          if (!open || !enabled) {
+            setShift(0);
+            return undefined;
+          }
+          const clamp = () => {
+            const anchor = anchorRef.current?.getBoundingClientRect();
+            const panel = panelRef.current;
+            if (!anchor || !panel) return;
+            const margin = 12;
+            const width = panel.offsetWidth;
+            const idealLeft = anchor.left + anchor.width / 2 - width / 2;
+            const wantLeft = Math.max(margin, Math.min(idealLeft, window.innerWidth - margin - width));
+            const next = wantLeft - idealLeft;
+            setShift((current) => (current === next ? current : next));
+          };
+          clamp();
+          const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(clamp) : null;
+          if (observer && panelRef.current) observer.observe(panelRef.current);
+          window.addEventListener('resize', clamp);
+          return () => {
+            if (observer) observer.disconnect();
+            window.removeEventListener('resize', clamp);
+          };
+        }, [open, enabled, anchorRef, panelRef]);
+        return shift;
       }
 
       // ------------------------------------------------------------------
@@ -689,7 +733,8 @@
        */
       function Popover({ open, anchorRef, onClose, anchorName, label, children }) {
         const panelRef = useRef(null);
-        const fallback = fallbackAnchoredPosition({ open, anchorRef, panelRef });
+        const fallback = fallbackAnchoredPosition({ open, anchorRef, panelRef, enabled: !CSS_ANCHOR });
+        const clampShift = usePopoverClamp({ open, anchorRef, panelRef, enabled: CSS_ANCHOR });
         useEffect(() => {
           if (!open) return undefined;
           const onKey = (event) => {
@@ -709,7 +754,9 @@
           };
         }, [open, onClose, anchorRef]);
         if (!open) return null;
-        const style = CSS_ANCHOR ? { '--dsc-anchor': anchorName } : fallback || { visibility: 'hidden', left: 0, top: 0 };
+        const style = CSS_ANCHOR
+          ? { '--dsc-anchor': anchorName, translate: clampShift ? 'calc(-50% + ' + clampShift + 'px) 0' : undefined }
+          : fallback || { visibility: 'hidden', left: 0, top: 0 };
         return ReactDOM.createPortal(
           h('div', { ref: panelRef, className: 'dsc-popover', role: 'dialog', 'aria-label': label, 'data-window-drag-exclude': '', style }, children),
           document.body,
