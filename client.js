@@ -2086,9 +2086,26 @@
           });
           // 回合收尾扩展位（「20 轮…」状态行的左边）：官方 extension tail 列表槽，
           // 放一枚刷新页面按钮——应用没绑 Ctrl+R，插件/样式没同步时一键整页重载。
-          ctx.slots.inject('conversation.chat.turnTail', () => {
-            ctx.slots.register({ name: 'conversation.chat.turnTail', id: PLUGIN_ID + '-refresh', priority: -1, locale: NS }, (props) => h(TurnTailRefresh, props));
-          });
+          // 注意：turnTail 是纯扩展槽，宿主从不注册条目，键的声明要靠第一次
+          // register 创建——不能用 slots.inject（它会等一个永远不会自己出现的
+          // 声明，按钮就永远不渲染——已踩坑）；注册被拒时再退回等待声明。
+          const mountTurnTailRefresh = () =>
+            ctx.slots.register(
+              { name: 'conversation.chat.turnTail', id: PLUGIN_ID + '-refresh', priority: -1, locale: NS },
+              (props) => h(TurnTailRefresh, props),
+            );
+          try {
+            mountTurnTailRefresh();
+          } catch (error) {
+            ctx.slots.inject('conversation.chat.turnTail', () => {
+              try {
+                return mountTurnTailRefresh();
+              } catch (nested) {
+                console.error('[' + PLUGIN_ID + '] turnTail refresh registration failed', nested);
+                throw nested;
+              }
+            });
+          }
           // 模型选择座位：以更低的 priority 压过内置 seat（ZCode 风格双栏 + 推理等级）。
           // 目录状态与提交动作复用宿主 modelDirectories 服务——与 /model 弹窗共享同一份
           // 会话状态，任何一边切换另一边即时同步。children 不在这里重复声明（ledger 里
