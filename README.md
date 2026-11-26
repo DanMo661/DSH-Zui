@@ -41,10 +41,16 @@ just-finished subagents and background jobs, and drill into the subagent / workf
 ### 方式 A：让 DSH 会话里的 Agent 装
 
 ```
-请用 plugin_manager 的 install_bundle 安装 D:\Work_Project\dsh-status-capsules
+请用 plugin_manager 的 install_bundle 安装 https://github.com/DanMo661/dsh-pulse
 ```
 
-### 方式 B：`dsh` CLI（本地目录）
+### 方式 B：`dsh` CLI（GitHub）
+
+```bash
+dsh plugin --profile <你的 profile> add github:DanMo661/dsh-pulse
+```
+
+### 方式 C：`dsh` CLI（本地目录）
 
 ```bash
 dsh plugin --profile <你的 profile> add link:<本目录的绝对路径>
@@ -55,7 +61,6 @@ dsh plugin --profile <你的 profile> add link:<本目录的绝对路径>
 ```bash
 dsh plugin --profile <你的 profile> add dsh-pulse
 ```
-
 安装后**重启 DSH**（Host 要加载新的 Loader 条目），再**刷新页面**。
 
 卸载：`dsh plugin --profile <你的 profile> remove dsh-pulse`。卸载或禁用后内置的待办面板原样回来。
