@@ -373,7 +373,7 @@
       const React = require('react');
       const h = React.createElement;
       const ReactDOM = require('react-dom');
-      const { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } = React;
+      const { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback, useSyncExternalStore } = React;
 
       /**
        * 浮层定位优先走 CSS 锚点定位（DSH 自带菜单同一机制，见 .dsc-popover 规则），
