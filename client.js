@@ -123,6 +123,7 @@
       'trigger.plugin': '插件唤醒',
       'trigger.github': 'GitHub 触发',
       'trigger.webhook': 'Webhook 触发',
+      'refresh.title': '刷新页面（插件或样式没同步时点这里）',
     },
     en: {
       'todo.running': 'In progress',
@@ -198,6 +199,7 @@
       'trigger.plugin': 'Plugin woke the session',
       'trigger.github': 'GitHub trigger',
       'trigger.webhook': 'Webhook trigger',
+      'refresh.title': 'Refresh page (use this when the plugin or styles look stale)',
     },
   };
 
@@ -351,6 +353,11 @@
     '.dsc-trigger-chevron svg{transition:transform .15s ease}',
     '.dsc-trigger-chevron[data-open] svg{transform:rotate(90deg)}',
     '.dsc-trigger-body{margin:0 0 2px 26px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto;font-family:var(--dsw-font-family,inherit)}',
+    // ---- 刷新页面按钮：应用没绑 Ctrl+R，插件/样式没同步时点它整页重载 ----
+    '.dsc-refresh{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:999px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}',
+    '@media(hover:hover){.dsc-refresh:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}',
+    '.dsc-refresh:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
+    '.dsc-refresh svg{display:block}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
   ].join('');
@@ -694,6 +701,13 @@
           return svg({ ...STROKE }, [
             h('rect', { key: 'r', x: 4.4, y: 4.4, width: 7.2, height: 7.2, rx: 1.6 }),
             h('path', { key: 'pins', d: 'M6.3 1.8v2.6M9.7 1.8v2.6M6.3 11.6v2.6M9.7 11.6v2.6M1.8 6.3h2.6M1.8 9.7h2.6M11.6 6.3h2.6M11.6 9.7h2.6' }),
+          ]);
+        },
+        /** 循环箭头（刷新页面）。 */
+        refresh() {
+          return svg({ ...STROKE }, [
+            h('path', { key: 'arc', d: 'M13.3 8.2A5.3 5.3 0 1 1 11.4 4.2' }),
+            h('path', { key: 'tip', d: 'M11.7 1.5l-.3 2.9 2.9.3' }),
           ]);
         },
         terminal() {
@@ -1854,6 +1868,13 @@
         const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || openId === 'activity';
         // 打开期间不因数据瞬空强制关闭：待办被模型清空时浮层显示空态，由用户自行收起。
         if (!showTodo && !showActivity) return null;
+        const reload = () => {
+          try {
+            window.location.reload();
+          } catch (error) {
+            /* 忽略：极端环境下无法刷新 */
+          }
+        };
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-row': '' },
@@ -1877,6 +1898,14 @@
                 t,
               })
             : null,
+          h('button', {
+            key: 'refresh',
+            type: 'button',
+            className: 'dsc-refresh',
+            title: t('refresh.title'),
+            'aria-label': t('refresh.title'),
+            onClick: reload,
+          }, ICON.refresh()),
         );
       }
 
@@ -1924,6 +1953,19 @@
             h('span', { className: 'dsc-capsule-label' }, t('todo.' + summary.status)),
             h('span', { className: 'dsc-capsule-count' }, summary.completed + '/' + summary.total),
           ),
+          h('button', {
+            type: 'button',
+            className: 'dsc-refresh',
+            title: t('refresh.title'),
+            'aria-label': t('refresh.title'),
+            onClick: () => {
+              try {
+                window.location.reload();
+              } catch (error) {
+                /* 忽略 */
+              }
+            },
+          }, ICON.refresh()),
         );
       }
 

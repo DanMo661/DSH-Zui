@@ -1,6 +1,6 @@
 {
   "name": "dsh-pulse",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "DSH Pulse · 会话状态胶囊栏：输入框上方的待办胶囊（处理中 0/5）+ 智能体活动胶囊（头像堆叠 · 已完成 32），对话流中的子智能体实时卡片，点开待办列表、子智能体目录与工作流目录。 A ZCode-style status capsule row above the composer with live subagent cards in the conversation.",
   "keywords": [
     "dsh",
