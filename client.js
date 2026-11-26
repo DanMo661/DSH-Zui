@@ -106,6 +106,7 @@
       'model.sessionInUse': '当前会话已被占用，可能是其他正在运行的 DSH 导致的，请退出其他正在运行的 DSH 后重试。',
       'model.accountProvider': 'DeepSeek 账号',
       'model.count': '{count} 个模型',
+  'model.providers': '模型服务',
       'team.toggle': '启用智能体团队协作',
       'trigger.request': '收到执行请求',
       'trigger.continue': '收到继续请求',
@@ -183,6 +184,7 @@
       'model.sessionInUse': 'This session is already in use. Quit other running DSH instances and try again.',
       'model.accountProvider': 'DeepSeek Account',
       'model.count': '{count} models',
+  'model.providers': 'Providers',
       'team.toggle': 'Enable agent team collaboration',
       'trigger.request': 'Received a run request',
       'trigger.continue': 'Received a continue request',
@@ -310,36 +312,41 @@
     '.dsc-toolcard-body{margin:2px 0 4px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover)}',
     '.dsc-toolcard-desc{margin:0 0 4px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}',
     '.dsc-toolcard-pre{margin:0;max-height:180px;overflow:auto;font-family:var(--dsw-font-family,ui-monospace,monospace);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-word;color:var(--dsw-alias-label-secondary);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2)}',
-    // ---- 模型选择座位：ZCode 风格双栏（provider 列 + 模型列 + 推理等级分档）----
+    // ---- 模型选择座位：ZCode 风格双栏（provider 列 + 模型列），底部堆叠推理等级与团队开关 ----
+    // 结构教训：foot/teamrow 曾经是 .dsc-modelpop（flex 行）的直接子元素，被两列挤到
+    // 零宽——滑杆「消失」就是这个原因。现在两列包进 -cols 行，底部区域纵向堆叠占满整行。
     '.dsc-popover--wide{min-width:min(500px,100vw - 24px);max-width:min(640px,100vw - 24px)}',
-    '.dsc-modelpop{display:flex;gap:8px;align-items:stretch;padding:2px 0 0}',
-    '.dsc-modelpop-side{flex:none;width:150px;max-height:min(320px,42dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
-    '.dsc-modelpop-main{flex:1;min-width:0;max-height:min(320px,42dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-modelpop{display:flex;flex-direction:column;gap:2px;box-sizing:border-box;padding:4px}',
+    '.dsc-modelpop-cols{display:flex;gap:8px;align-items:stretch;min-height:0}',
+    '.dsc-modelpop-side{flex:none;width:170px;max-height:min(300px,40dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-modelpop-main{flex:1;min-width:0;max-height:min(300px,40dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
     '.dsc-mrow{box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;min-height:30px;margin:0;padding:4px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;line-height:20px;text-align:left;cursor:pointer}',
     '@media(hover:hover){.dsc-mrow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
     '.dsc-mrow[aria-checked=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);font-weight:500}',
     '.dsc-mrow[disabled]{opacity:.55;cursor:default}',
     '.dsc-mrow-copy{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden}',
     '.dsc-mrow-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '.dsc-mrow-count{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}',
+    // provider 行：名称在上、模型数在下——横排时「DeepSeek 账号」会被计数挤成省略号。
+    '.dsc-mrow--stack{gap:2px}',
+    '.dsc-mrow--stack .dsc-mrow-copy{flex-direction:column;align-items:flex-start;gap:1px}',
+    '.dsc-mrow-count{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:15px}',
     '.dsc-mrow-check{flex:none;display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;color:var(--dsw-alias-state-success-primary)}',
     '.dsc-mrow-check svg{width:14px;height:14px}',
     '.dsc-badge{flex:none;display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:400;line-height:18px}',
     '.dsc-badge[data-tone=success]{color:var(--dsw-alias-state-success-primary)}',
     '.dsc-badge[data-tone=info],.dsc-badge[data-tone=brand]{color:var(--dsw-alias-brand-primary)}',
     '.dsc-badge[data-tone=warning]{color:var(--dsw-alias-state-warning-primary)}',
-    '.dsc-modelpop-foot{flex:none;display:flex;align-items:center;gap:10px;min-height:36px;padding:6px 2px 2px;border-top:0.5px solid var(--dsw-alias-border-l1);margin-top:4px}',
-    '.dsc-modelpop-footlabel{flex:none;color:var(--dsw-alias-label-secondary);font-size:12px}',
-    '.dsc-effort{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}',
+    // 底部区：标题行（推理等级 | 当前值）+ 滑杆，整行占满（ZCode ComposerEffortHeading 布局）。
+    '.dsc-modelpop-foot{flex:none;display:flex;flex-direction:column;gap:4px;margin-top:4px;padding:8px 6px 2px;border-top:0.5px solid var(--dsw-alias-border-l1)}',
+    '.dsc-modelpop-efforthead{display:flex;align-items:center;gap:8px;min-width:0}',
+    '.dsc-modelpop-footlabel{flex:none;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:16px}',
+    '.dsc-modelpop-effortvalue{flex:none;margin-left:auto;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary);font-size:12px;line-height:16px;font-weight:500}',
     '.dsc-effort-pill{box-sizing:border-box;display:inline-flex;align-items:center;min-height:24px;padding:2px 12px;border:0.5px solid var(--dsw-alias-border-l2);border-radius:999px;background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:18px;cursor:pointer}',
     '.dsc-effort-pill[aria-checked=true]{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-on-accent,#fff);font-weight:500}',
     '@media(hover:hover){.dsc-effort-pill:hover:not([aria-checked=true]):not([disabled]){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
     '.dsc-effort-pill[disabled]{opacity:.55;cursor:default}',
-    '.dsc-modelpop-search{box-sizing:border-box;width:100%;min-height:28px;margin:0 0 4px;padding:3px 10px;border:0.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;line-height:20px}',
-    '.dsc-modelpop-search::placeholder{color:var(--dsw-alias-label-tertiary)}',
-    '.dsc-modelpop-search:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:0}',
     '.dsc-modelpop-note{padding:6px 8px;color:var(--dsw-alias-label-tertiary);font-size:12px}',
-    '.dsc-modelpop-error{margin-top:4px;padding:5px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}',
+    '.dsc-modelpop-error{flex:none;margin-top:4px;padding:5px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px}',
     '.dsc-modelseat-effort{color:var(--dsw-alias-label-tertiary);font-size:12px}',
     '.dsc-mrow:focus-visible,.dsc-effort-pill:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
     // ---- 回合触发标记：keyed 接管 turn-trigger，事件带发送者头像脸与身份 ----
@@ -355,37 +362,41 @@
     '.dsc-trigger-chevron svg{transition:transform .15s ease}',
     '.dsc-trigger-chevron[data-open] svg{transform:rotate(90deg)}',
     '.dsc-trigger-body{margin:0 0 2px 26px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:18px;white-space:pre-wrap;word-break:break-word;max-height:180px;overflow:auto;font-family:var(--dsw-font-family,inherit)}',
-    // ---- 刷新页面按钮：应用没绑 Ctrl+R，插件/样式没同步时点它整页重载 ----
-    '.dsc-refresh{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:999px;background:none;color:var(--dsw-alias-label-tertiary);cursor:pointer}',
-    '@media(hover:hover){.dsc-refresh:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}',
-    '.dsc-refresh:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
-    '.dsc-refresh svg{display:block}',
     // ---- 替换 composer 自带的模型座位：宿主触发按钮带内联变量 --dsh-model-anchor，
     // ---- 以它为稳定选择器；仅当本插件的 dock 模型胶囊已挂载（body 标记类）时隐藏，
     // ---- 插件不在/卸载后原版座位自动恢复，功能不丢。
     'body.dsc-has-model-picker button[style*="--dsh-model-anchor"]{display:none !important}',
-    '.dsc-seatdebug{flex:none;margin-left:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
-    // ---- 思考强度滑杆（ZCode composer-thought-slider 移植）----
-    '.dsc-slider-row{display:flex;align-items:center;gap:10px;min-width:0}',
-    '.dsc-slider-label{flex:none;font-size:12px;color:var(--dsw-alias-label-secondary)}',
-    '.dsc-slider-wrap{position:relative;flex:1;min-width:0;height:32px}',
-    '.dsc-slider-track{position:absolute;left:0;right:0;top:8px;bottom:8px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.18));overflow:hidden}',
-    '.dsc-slider-fill{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:var(--dsw-alias-state-success-primary);transition:width 120ms ease-out}',
-    '.dsc-slider-fill::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity 200ms ease-out;background:linear-gradient(270deg in oklch shorter hue,var(--dsw-alias-brand-primary) 0%,var(--dsw-alias-state-success-primary) 100%)}',
-    '.dsc-slider-track[data-max=true] .dsc-slider-fill::before{opacity:1}',
-    '.dsc-slider-bubbles{position:absolute;inset:0;overflow:hidden;pointer-events:none}',
-    '.dsc-slider-bubble{position:absolute;border-radius:50%;background:#fff;opacity:0;animation:dsc-bubble-flow linear infinite}',
+    // ---- 思考强度滑杆（ZCode composer-thought-slider 1:1 移植）----
+    // 几何：32px 容器内 24px 高轨道（top 4px）、白色 28px 滑块（top 2px）、
+    // 填充宽 calc(14px + (100%-28px)*进度) 保证首尾档对齐档位圆点。
+    '.dsc-slider{position:relative;height:32px;border-radius:999px}',
+    '.dsc-slider[data-disabled=true]{opacity:.5}',
+    '.dsc-slider[data-disabled=true] .dsc-slider-range{cursor:default}',
+    '.dsc-slider-visual{position:absolute;inset:0;border-radius:inherit;pointer-events:none}',
+    '.dsc-slider-track{position:absolute;left:0;right:0;top:4px;height:24px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.18));box-shadow:inset 0 0 0 0.5px var(--dsw-alias-border-l1,rgba(127,127,127,.25));overflow:hidden}',
+    '.dsc-slider-fill{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:var(--dsw-alias-state-success-primary,#22c55e);transition:width 120ms ease-out}',
+    // 纯色→渐变不能直接插值：常驻渐变层只在最高档淡入（沿 oklch 较短色相路径经青色）。
+    '.dsc-slider-fill::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity 200ms ease-out;background:linear-gradient(270deg in oklch shorter hue,var(--dsw-alias-brand-primary,#3b82f6) 0%,var(--dsw-alias-state-success-primary,#22c55e) 100%)}',
+    // GLM FlashX / Highspeed 专用：蓝→紫（oklab 直接插值，避免绿色起点发青）。
+    '.dsc-slider-fill[data-highspeed=true]::before{background:linear-gradient(90deg in oklab,var(--dsw-alias-brand-primary,#3b82f6) 0%,#a855f7 100%)}',
+    '.dsc-slider-fill[data-max=true]::before{opacity:1}',
+    // 气泡：外层满宽做位移动画（104%→-4% 是相对满宽，不是气泡自身宽），内层才是白色圆点；
+    // 只有最高档且可用时才渲染（ZCode 同款）。
+    '.dsc-slider-bubbles{position:absolute;inset:0;overflow:hidden}',
+    '.dsc-slider-bubble{position:absolute;left:0;right:0;opacity:0;animation:dsc-bubble-flow linear infinite}',
+    '.dsc-slider-dot{display:block;border-radius:50%;background:#fff}',
     '@keyframes dsc-bubble-flow{0%{transform:translateX(104%);opacity:0}15%,80%{opacity:.4}100%{transform:translateX(-4%);opacity:0}}',
     '.dsc-slider-stops{position:absolute;left:14px;right:14px;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none}',
-    '.dsc-slider-stop{width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-label-dimmed,rgba(0,0,0,.28));transition:background 120ms ease-out}',
-    '.dsc-slider-stop[data-filled=true]{background:#fff;opacity:.45}',
-    '.dsc-slider-thumb{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.28);transition:left 120ms ease-out;pointer-events:none}',
+    '.dsc-slider-stop{flex:none;width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-label-tertiary,rgba(127,127,127,.7));transition:background 120ms ease-out,opacity 120ms ease-out}',
+    '.dsc-slider-stop[data-filled=true]{background:#fff;opacity:.4}',
+    '.dsc-slider-thumb{position:absolute;top:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:left 120ms ease-out}',
     '.dsc-slider-range{position:absolute;inset:0;margin:0;width:100%;height:100%;appearance:none;-webkit-appearance:none;background:transparent;outline:none;cursor:pointer}',
     '.dsc-slider-range::-webkit-slider-runnable-track{height:32px;background:transparent}',
     '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:28px;height:28px;border:0;border-radius:50%;background:transparent}',
-    '@media (prefers-reduced-motion:reduce){.dsc-slider-bubble{animation:none}.dsc-slider-fill,.dsc-slider-fill::before,.dsc-slider-thumb,.dsc-slider-stop{transition:none}}',
-    // ---- 团队协作开关行 ----
-    '.dsc-teamrow{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 2px 2px;border-top:0.5px solid var(--dsw-alias-border-l1);margin-top:4px}',
+    '.dsc-slider:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:2px}',
+    '@media (prefers-reduced-motion:reduce){.dsc-slider-bubbles{display:none}.dsc-slider-fill,.dsc-slider-fill::before,.dsc-slider-thumb,.dsc-slider-stop{transition:none}}',
+    // ---- 团队协作开关行（面板底部，推理等级之下）----
+    '.dsc-teamrow{flex:none;display:flex;align-items:center;gap:8px;min-width:0;margin-top:4px;padding:8px 6px 2px;border-top:0.5px solid var(--dsw-alias-border-l1)}',
     '.dsc-teamrow-label{flex:1;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary)}',
     '.dsc-switch{flex:none;position:relative;display:inline-flex;align-items:center;width:40px;height:22px;padding:0;border:0;border-radius:999px;background:var(--dsw-alias-border-l2,rgba(127,127,127,.35));cursor:pointer;transition:background .15s ease}',
     '.dsc-switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}',
@@ -1364,88 +1375,101 @@
             h(
               'div',
               { className: 'dsc-modelpop' },
+              // 双列区：provider 列 + 模型列（必须包在 -cols 行里，底部区才能纵向堆叠占满）
               h(
                 'div',
-                { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.effort') },
-                ordered.map((group) =>
-                  h(
-                    'button',
-                    {
-                      key: group.id,
-                      type: 'button',
-                      className: 'dsc-mrow',
-                      role: 'option',
-                      'aria-checked': activeGroup ? group.id === activeGroup.id : false,
-                      disabled: busy,
-                      onClick: () => setProviderId(group.id),
-                      title: providerName(group),
-                    },
-                    h('span', { className: 'dsc-mrow-copy' }, h('span', { className: 'dsc-mrow-name' }, providerName(group))),
-                    h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length })),
+                { className: 'dsc-modelpop-cols' },
+                h(
+                  'div',
+                  { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.providers') },
+                  ordered.map((group) =>
+                    h(
+                      'button',
+                      {
+                        key: group.id,
+                        type: 'button',
+                        className: 'dsc-mrow dsc-mrow--stack',
+                        role: 'option',
+                        'aria-checked': activeGroup ? group.id === activeGroup.id : false,
+                        disabled: busy,
+                        onClick: () => setProviderId(group.id),
+                        title: providerName(group),
+                      },
+                      h('span', { className: 'dsc-mrow-copy' },
+                        h('span', { className: 'dsc-mrow-name' }, providerName(group)),
+                        h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length }))),
+                    ),
                   ),
                 ),
-              ),
-              h(
-                'div',
-                { className: 'dsc-modelpop-main' },
-                state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
-                state.error !== null
-                  ? h('div', { className: 'dsc-modelpop-error' },
-                      h('span', null, t('model.error', { message: state.error })),
-                      h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
-                  : null,
-                state.failures.map((failure) =>
-                  h('div', { className: 'dsc-modelpop-note', key: failure.id },
-                    (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                h(
+                  'div',
+                  { className: 'dsc-modelpop-main' },
+                  state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
+                  state.error !== null
+                    ? h('div', { className: 'dsc-modelpop-error' },
+                        h('span', null, t('model.error', { message: state.error })),
+                        h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
+                    : null,
+                  state.failures.map((failure) =>
+                    h('div', { className: 'dsc-modelpop-note', key: failure.id },
+                      (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                  ),
+                  activeGroup === null || (state.status === 'ready' && totalModels === 0)
+                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
+                    : activeGroup.models.map((model) => {
+                          const selected = current !== null && activeGroup.id === current.provider && model.id === current.model;
+                          const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
+                          return h(
+                            'button',
+                            {
+                              key: model.id,
+                              type: 'button',
+                              className: 'dsc-mrow',
+                              role: 'menuitemradio',
+                              'aria-checked': selected,
+                              disabled: busy,
+                              title: model.name,
+                              onClick: () => chooseModel(activeGroup, model),
+                            },
+                            h('span', { className: 'dsc-mrow-copy' }, renderName(activeGroup, model, 'option', selected)),
+                            h('span', { className: 'dsc-mrow-check' },
+                              pendingRow
+                                ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
+                                : selected
+                                  ? ICON.done()
+                                  : null),
+                          );
+                        }),
                 ),
-                activeGroup === null || (state.status === 'ready' && totalModels === 0)
-                  ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
-                  : activeGroup.models.map((model) => {
-                        const selected = current !== null && activeGroup.id === current.provider && model.id === current.model;
-                        const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
-                        return h(
-                          'button',
-                          {
-                            key: model.id,
-                            type: 'button',
-                            className: 'dsc-mrow',
-                            role: 'menuitemradio',
-                            'aria-checked': selected,
-                            disabled: busy,
-                            title: model.name,
-                            onClick: () => chooseModel(activeGroup, model),
-                          },
-                          h('span', { className: 'dsc-mrow-copy' }, renderName(activeGroup, model, 'option', selected)),
-                          h('span', { className: 'dsc-mrow-check' },
-                            pendingRow
-                              ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
-                              : selected
-                                ? ICON.done()
-                                : null),
-                        );
-                      }),
               ),
-              reasoning === undefined && currentModel ? null : effortPills.length > 0
-                ? h(
-                    'div',
-                    { className: 'dsc-modelpop-foot dsc-modelpop-foot-up' },
-                    h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                    h(EffortSlider, {
-                      levels: effortPills,
-                      valueIndex: Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort)),
-                      onPick: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
-                      disabled: busy || !current,
-                      ariaLabel: t('model.effort'),
-                      valueName: effortName,
-                    }),
-                  )
-                : null,
+              // 宿主扩展选项（有的话）：紧跟双列区。
               typeof renderSlot === 'function'
                 ? renderSlot('conversation.input.model.options', {
                     locked: locked || busy,
                     dismiss: close,
                     reportFailure: showError,
                   })
+                : null,
+              // 推理等级：标题行（左标签 | 右当前值）+ ZCode 滑杆；仅一档时只显示标题。
+              reasoning === undefined && currentModel ? null : effortPills.length > 0
+                ? h(
+                    'div',
+                    { className: 'dsc-modelpop-foot' },
+                    h('div', { className: 'dsc-modelpop-efforthead' },
+                      h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, effortName ?? '')),
+                    effortPills.length > 1
+                      ? h(EffortSlider, {
+                          levels: effortPills,
+                          valueIndex: Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort)),
+                          onPick: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
+                          disabled: busy || !current,
+                          ariaLabel: t('model.effort'),
+                          valueName: effortName,
+                          highspeed: isHighspeedModel(currentModel),
+                        })
+                      : null,
+                  )
                 : null,
               teamEnabled !== undefined
                 ? h(
@@ -1506,6 +1530,12 @@
         return { current, currentModel, reasoning, effectiveEffort, effortName, ordered, effortPills };
       }
 
+      /** GLM FlashX / Highspeed 走蓝→紫滑杆变体（按显示名判定，ZCode isGlmHighspeedModel）。 */
+      function isHighspeedModel(model) {
+        const name = model ? String(model.name || '') : '';
+        return /glm/i.test(name) && /highspeed|flashx/i.test(name);
+      }
+
       // ZCode 开源（zai-org/zcode，Apache-2.0）composer-thought-slider 的移植：
       // 渐变只在最高档浮现、气泡从右向左流动、档位圆点、白色圆形滑块。
       const EFFORT_BUBBLES = [
@@ -1523,36 +1553,50 @@
         { top: 7, size: 4, duration: 3.6, delay: -3.1 },
       ];
 
-      function EffortSlider({ levels, valueIndex, onPick, disabled, ariaLabel, valueName }) {
+      /**
+       * 思考强度滑杆——ZCode composer-thought-slider 1:1 移植。
+       * 视觉层（轨道/填充/圆点/滑块/气泡）aria-hidden，交互交给原生 range；
+       * 气泡外层满宽做位移（104%→-4% 相对满宽）、内层白色圆点；
+       * 渐变只在最高档淡入；GLM FlashX/Highspeed 走蓝→紫变体。
+       */
+      function EffortSlider({ levels, valueIndex, onPick, disabled, ariaLabel, valueName, highspeed }) {
         const frac = levels.length > 1 ? valueIndex / (levels.length - 1) : 0;
         const atMax = valueIndex === levels.length - 1;
-        return h('div', { className: 'dsc-slider-wrap' },
-          h('div', { className: 'dsc-slider-track', 'data-max': atMax ? '' : undefined },
-            h('div', { className: 'dsc-slider-fill', style: { width: (levels.length > 1 ? 20 + frac * 80 : 100) + '%' } }),
-            h('div', { className: 'dsc-slider-bubbles', 'aria-hidden': true },
-              EFFORT_BUBBLES.map((bubble, index) =>
-                h('span', {
-                  key: index,
-                  className: 'dsc-slider-bubble',
-                  style: {
-                    top: bubble.top + 'px',
-                    width: bubble.size + 'px',
-                    height: bubble.size + 'px',
-                    animationDuration: bubble.duration + 's',
-                    animationDelay: bubble.delay + 's',
-                  },
-                }),
+        const off = disabled ?? false;
+        const filled = !off;
+        return h('div', { className: 'dsc-slider', 'data-disabled': off ? 'true' : undefined },
+          h('div', { key: 'visual', className: 'dsc-slider-visual', 'aria-hidden': true },
+            h('div', { className: 'dsc-slider-track' },
+              h('div', {
+                className: 'dsc-slider-fill',
+                'data-max': filled && atMax ? 'true' : undefined,
+                'data-highspeed': filled && atMax && highspeed ? 'true' : undefined,
+                style: { width: 'calc(14px + (100% - 28px) * ' + frac + ')' },
+              },
+                filled && atMax
+                  ? h('div', { className: 'dsc-slider-bubbles' },
+                      EFFORT_BUBBLES.map((bubble, index) =>
+                        h('span', {
+                          key: index,
+                          className: 'dsc-slider-bubble',
+                          style: {
+                            top: bubble.top + 'px',
+                            height: bubble.size + 'px',
+                            animationDuration: bubble.duration + 's',
+                            animationDelay: bubble.delay + 's',
+                          },
+                        }, h('span', { className: 'dsc-slider-dot', style: { width: bubble.size + 'px', height: bubble.size + 'px' } }))),
+                    )
+                  : null,
               ),
             ),
-            h('div', { className: 'dsc-slider-stops', 'aria-hidden': true },
+            h('div', { className: 'dsc-slider-stops' },
               levels.map((level, index) =>
                 h('span', {
                   key: level.key,
                   className: 'dsc-slider-stop',
-                  'data-filled': index <= valueIndex ? '' : undefined,
-                  style: { left: 'calc(' + (levels.length > 1 ? (index / (levels.length - 1)) * 100 : 0) + '% - 2px)' },
-                }),
-              ),
+                  'data-filled': filled && index <= valueIndex ? 'true' : undefined,
+                })),
             ),
             h('div', { className: 'dsc-slider-thumb', style: { left: 'calc((100% - 28px) * ' + frac + ')' } }),
           ),
@@ -1565,7 +1609,7 @@
             value: valueIndex,
             'aria-label': ariaLabel,
             'aria-valuetext': valueName,
-            disabled: disabled ?? false,
+            disabled: off,
             onChange: (event) => onPick(Number(event.target.value)),
           }),
         );
@@ -1693,80 +1737,90 @@
               { className: 'dsc-modelpop' },
               h(
                 'div',
-                { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.effort') },
-                vm.ordered.map((group) =>
-                  h(
-                    'button',
-                    {
-                      key: group.id,
-                      type: 'button',
-                      className: 'dsc-mrow',
-                      role: 'option',
-                      'aria-checked': activeGroup ? group.id === activeGroup.id : false,
-                      disabled: busy,
-                      onClick: () => setProviderId(group.id),
-                      title: providerName(group),
-                    },
-                    h('span', { className: 'dsc-mrow-copy' }, h('span', { className: 'dsc-mrow-name' }, providerName(group))),
-                    h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length })),
+                { className: 'dsc-modelpop-cols' },
+                h(
+                  'div',
+                  { className: 'dsc-modelpop-side', role: 'listbox', 'aria-label': t('model.providers') },
+                  vm.ordered.map((group) =>
+                    h(
+                      'button',
+                      {
+                        key: group.id,
+                        type: 'button',
+                        className: 'dsc-mrow dsc-mrow--stack',
+                        role: 'option',
+                        'aria-checked': activeGroup ? group.id === activeGroup.id : false,
+                        disabled: busy,
+                        onClick: () => setProviderId(group.id),
+                        title: providerName(group),
+                      },
+                      h('span', { className: 'dsc-mrow-copy' },
+                        h('span', { className: 'dsc-mrow-name' }, providerName(group)),
+                        h('span', { className: 'dsc-mrow-count' }, t('model.count', { count: group.models.length }))),
+                    ),
                   ),
                 ),
-              ),
-              h(
-                'div',
-                { className: 'dsc-modelpop-main' },
-                state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
-                state.error !== null
-                  ? h('div', { className: 'dsc-modelpop-error' },
-                      h('span', null, t('model.error', { message: state.error })),
-                      h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
-                  : null,
-                state.failures.map((failure) =>
-                  h('div', { className: 'dsc-modelpop-note', key: failure.id },
-                    (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                h(
+                  'div',
+                  { className: 'dsc-modelpop-main' },
+                  state.status === 'loading' ? h('div', { className: 'dsc-modelpop-note' }, t('model.listLoading')) : null,
+                  state.error !== null
+                    ? h('div', { className: 'dsc-modelpop-error' },
+                        h('span', null, t('model.error', { message: state.error })),
+                        h('button', { type: 'button', className: 'dsc-effort-pill', onClick: retry }, t('model.retry')))
+                    : null,
+                  state.failures.map((failure) =>
+                    h('div', { className: 'dsc-modelpop-note', key: failure.id },
+                      (failure.id === 'deepseek-account' ? t('model.accountProvider') : failure.name) + ' · ' + failure.message),
+                  ),
+                  activeGroup === null || (state.status === 'ready' && totalModels === 0)
+                    ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
+                    : activeGroup.models.map((model) => {
+                          const selected = vm.current !== null && activeGroup.id === vm.current.provider && model.id === vm.current.model;
+                          const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
+                          return h(
+                            'button',
+                            {
+                              key: model.id,
+                              type: 'button',
+                              className: 'dsc-mrow',
+                              role: 'menuitemradio',
+                              'aria-checked': selected,
+                              disabled: busy,
+                              title: model.name,
+                              onClick: () => chooseModel(activeGroup, model),
+                            },
+                            h('span', { className: 'dsc-mrow-copy' },
+                              placementBadge(model, 'option', badgeFor),
+                              h('span', null, model.name)),
+                            h('span', { className: 'dsc-mrow-check' },
+                              pendingRow
+                                ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
+                                : selected
+                                  ? ICON.done()
+                                  : null),
+                          );
+                        }),
                 ),
-                activeGroup === null || (state.status === 'ready' && totalModels === 0)
-                  ? h('div', { className: 'dsc-modelpop-note' }, t('model.empty'))
-                  : activeGroup.models.map((model) => {
-                        const selected = vm.current !== null && activeGroup.id === vm.current.provider && model.id === vm.current.model;
-                        const pendingRow = state.pending !== null && state.pending.provider === activeGroup.id && state.pending.model === model.id;
-                        return h(
-                          'button',
-                          {
-                            key: model.id,
-                            type: 'button',
-                            className: 'dsc-mrow',
-                            role: 'menuitemradio',
-                            'aria-checked': selected,
-                            disabled: busy,
-                            title: model.name,
-                            onClick: () => chooseModel(activeGroup, model),
-                          },
-                          h('span', { className: 'dsc-mrow-copy' },
-                            placementBadge(model, 'option', badgeFor),
-                            h('span', null, model.name)),
-                          h('span', { className: 'dsc-mrow-check' },
-                            pendingRow
-                              ? h('span', { className: 'dsc-glyph dsc-glyph--spin' }, todoGlyph('in_progress'))
-                              : selected
-                                ? ICON.done()
-                                : null),
-                        );
-                      }),
               ),
               vm.reasoning === undefined && vm.currentModel ? null : vm.effortPills.length > 0
                 ? h(
                     'div',
-                    { className: 'dsc-modelpop-foot dsc-modelpop-foot-up' },
-                    h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                    h(EffortSlider, {
-                      levels: vm.effortPills,
-                      valueIndex: Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort)),
-                      onPick: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
-                      disabled: busy || !vm.current,
-                      ariaLabel: t('model.effort'),
-                      valueName: vm.effortName,
-                    }),
+                    { className: 'dsc-modelpop-foot' },
+                    h('div', { className: 'dsc-modelpop-efforthead' },
+                      h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, vm.effortName ?? '')),
+                    vm.effortPills.length > 1
+                      ? h(EffortSlider, {
+                          levels: vm.effortPills,
+                          valueIndex: Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort)),
+                          onPick: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
+                          disabled: busy || !vm.current,
+                          ariaLabel: t('model.effort'),
+                          valueName: vm.effortName,
+                          highspeed: isHighspeedModel(vm.currentModel),
+                        })
+                      : null,
                   )
                 : null,
               teamEnabled !== undefined
