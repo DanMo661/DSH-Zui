@@ -2375,10 +2375,11 @@
             const mountModelSeat = () => {
               ctx.slots.inject('conversation.input.model', () => {
                 try {
+                  // 不写 id：与宿主条目同样由系统生成 id → 落进同一个选举格，
+                  // priority -1 即可压过宿主（若写不同 id，会各自成格、宿主先注册先赢）。
                   return ctx.slots.register(
                     {
                       name: 'conversation.input.model',
-                      id: PLUGIN_ID + '-model-seat',
                       priority: -1,
                       order: 0,
                       locale: NS,
