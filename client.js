@@ -211,7 +211,7 @@
     '.dsc-capsule{box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:32px;min-width:0;max-width:100%;padding:0 10px 0 8px;border:0.5px solid var(--dsw-alias-border-l2);border-radius:999px;background:var(--dsw-specific-menu);backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:20px;white-space:nowrap;cursor:pointer;transition:background .12s ease,border-color .12s ease;anchor-name:var(--dsc-anchor)}',
     '@media(hover:hover){.dsc-capsule:hover{border-color:var(--dsw-alias-border-l3);--dsc-face-ring:var(--dsw-alias-interactive-bg-hover)}}',
     '.dsc-capsule[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover);--dsc-face-ring:var(--dsw-alias-interactive-bg-hover)}',
-    '.dsc-capsule-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--dsw-alias-label-secondary)}',
+    '.dsc-capsule-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:auto;min-width:16px;height:16px;color:var(--dsw-alias-label-secondary)}',
     '.dsc-capsule-icon svg,.dsc-glyph svg,.dsc-stop svg,.dsc-back svg{display:block}',
     '.dsc-capsule-label{min-width:0;overflow:hidden;text-overflow:ellipsis}',
     '.dsc-capsule-count{flex:none;font-size:12px;line-height:16px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-tertiary)}',
@@ -1878,6 +1878,14 @@
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-row': '' },
+          h('button', {
+            key: 'refresh',
+            type: 'button',
+            className: 'dsc-refresh',
+            title: t('refresh.title'),
+            'aria-label': t('refresh.title'),
+            onClick: reload,
+          }, ICON.refresh()),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -1898,14 +1906,6 @@
                 t,
               })
             : null,
-          h('button', {
-            key: 'refresh',
-            type: 'button',
-            className: 'dsc-refresh',
-            title: t('refresh.title'),
-            'aria-label': t('refresh.title'),
-            onClick: reload,
-          }, ICON.refresh()),
         );
       }
 
@@ -1946,13 +1946,6 @@
         return h(
           'div',
           { className: 'dsc-row', 'data-dsc-fallback': '' },
-          h(
-            'button',
-            { type: 'button', className: 'dsc-capsule', 'aria-label': 'dsc-status: ' + message, title: message },
-            h('span', { className: 'dsc-capsule-icon' }, ICON.checks()),
-            h('span', { className: 'dsc-capsule-label' }, t('todo.' + summary.status)),
-            h('span', { className: 'dsc-capsule-count' }, summary.completed + '/' + summary.total),
-          ),
           h('button', {
             type: 'button',
             className: 'dsc-refresh',
@@ -1966,6 +1959,13 @@
               }
             },
           }, ICON.refresh()),
+          h(
+            'button',
+            { type: 'button', className: 'dsc-capsule', 'aria-label': 'dsc-status: ' + message, title: message },
+            h('span', { className: 'dsc-capsule-icon' }, ICON.checks()),
+            h('span', { className: 'dsc-capsule-label' }, t('todo.' + summary.status)),
+            h('span', { className: 'dsc-capsule-count' }, summary.completed + '/' + summary.total),
+          ),
         );
       }
 
