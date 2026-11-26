@@ -358,6 +358,10 @@
     '@media(hover:hover){.dsc-refresh:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}}',
     '.dsc-refresh:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
     '.dsc-refresh svg{display:block}',
+    // ---- 替换 composer 自带的模型座位：宿主触发按钮带内联变量 --dsh-model-anchor，
+    // ---- 以它为稳定选择器；仅当本插件的 dock 模型胶囊已挂载（body 标记类）时隐藏，
+    // ---- 插件不在/卸载后原版座位自动恢复，功能不丢。
+    'body.dsc-has-model-picker button[style*="--dsh-model-anchor"]{display:none !important}',
     '.dsc-seatdebug{flex:none;margin-left:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
@@ -1498,6 +1502,13 @@
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
+        // 挂载期间给 body 打标记：CSS 据此隐藏宿主原版模型座位（见样式表说明）。
+        useEffect(() => {
+          document.body.classList.add('dsc-has-model-picker');
+          return () => {
+            document.body.classList.remove('dsc-has-model-picker');
+          };
+        }, []);
         const showError = (text) => {
           setErrorText(text);
           clearTimeout(errorTimer.current);
