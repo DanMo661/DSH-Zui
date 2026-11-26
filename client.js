@@ -651,6 +651,15 @@
       }
 
       /**
+       * 头像取色键：必须用每个子智能体**独有**的键（子会话 id），不能用目录里的通用
+       * label——DSH 给每个子代理的 label 都是同一个通用名，用它散列会让所有头像挤进
+       * 同一种颜色。缺失 id 时退回标题，再退回显示名。
+       */
+      function agentColorKey(agent) {
+        return (agent && (agent.id || agent.title || agent.label)) || '';
+      }
+
+      /**
        * 子智能体头像：圆角方块加两只眼，状态决定表情与徽标。
        * `state`: running（竖长眼、眨眼）| done（对勾徽标）| ended（方块徽标）| idle（三点）。
        * `mono` 画中性灰的「集合」图标。
@@ -720,7 +729,7 @@
           'span',
           { className: 'dsc-capsule-icon dsc-stack', 'aria-hidden': true },
           agents.map((agent, index) =>
-            h('span', { key: agent.id, className: 'dsc-stack-slot', style: { zIndex: index + 1 } }, h(Face, { name: agent.label, state: agent.state, size: 16 })),
+            h('span', { key: agent.id, className: 'dsc-stack-slot', style: { zIndex: index + 1 } }, h(Face, { name: agentColorKey(agent), state: agent.state, size: 16 })),
           ),
           overflow > 0 ? h('span', { key: 'more', className: 'dsc-more' }, ICON.dots()) : null,
         );
@@ -954,7 +963,7 @@
           'li',
           { className: cls('dsc-item', canOpen && 'dsc-item--clickable'), 'data-state': agent.state },
           canOpen ? h('button', { key: 'hit', type: 'button', className: 'dsc-item-hit', 'aria-label': t('agent.open') + '：' + agent.label, onClick: () => onOpen(agent) }) : null,
-          h('span', { key: 'face', className: 'dsc-glyph' }, h(Face, { name: agent.label, state: agent.state, size: 16 })),
+          h('span', { key: 'face', className: 'dsc-glyph' }, h(Face, { name: agentColorKey(agent), state: agent.state, size: 16 })),
             h(
               'span',
               { key: 'main', className: 'dsc-main' },
@@ -1028,7 +1037,7 @@
           expandable
             ? h('button', { key: 'chevron', type: 'button', className: 'dsc-chevron', 'aria-expanded': open, 'aria-label': agent.label + ' · ' + t('directory.subagent'), onClick: () => onBranch(agent.id) }, ICON.chevronRight())
             : h('span', { key: 'space', className: 'dsc-chevron-space' }),
-          h('span', { key: 'face', className: 'dsc-glyph' }, h(Face, { name: agent.label, state: agent.state, size: 16 })),
+          h('span', { key: 'face', className: 'dsc-glyph' }, h(Face, { name: agentColorKey(agent), state: agent.state, size: 16 })),
           h(
             'span',
             { key: 'main', className: 'dsc-main' },
@@ -1305,7 +1314,7 @@
           h(
             'button',
             { type: 'button', className: 'dsc-toolcard-head', 'aria-expanded': open, onClick: () => setOpen((current) => !current) },
-            h('span', { className: 'dsc-glyph' }, h(Face, { name: display, state: faceState, size: 16 })),
+            h('span', { className: 'dsc-glyph' }, h(Face, { name: childId || display, state: faceState, size: 16 })),
             h(
               'span',
               { className: 'dsc-main' },
