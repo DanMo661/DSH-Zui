@@ -1246,6 +1246,8 @@
           ...(reasoning.defaultEffort === undefined ? [{ key: 'provider-default', effort: undefined, label: t('model.providerDefault') }] : []),
           ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
         ];
+        const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
+        const showSearch = totalModels > 6;
 
         if (!available || !directory) return null;
 
@@ -2159,7 +2161,6 @@
             'aria-label': t('refresh.title'),
             onClick: reload,
           }, ICON.refresh()),
-          h('span', { key: 'seatdebug', className: 'dsc-seatdebug' }, '座:' + SEAT_DEBUG.state + ' ' + SEAT_DEBUG.ledger + (SEAT_DEBUG.detail ? ' !' + SEAT_DEBUG.detail.slice(0, 60) : '')),
           showTodo ? h(TodoCapsule, { key: 'todo', todos, open: openId === 'todo', onToggle: () => toggle('todo'), onClose: close, t }) : null,
           showActivity
             ? h(ActivityCapsule, {
@@ -2178,16 +2179,6 @@
                 onClose: close,
                 actions,
                 t,
-              })
-            : null,
-          models && sessionsService && sessionId
-            ? h(ModelDockCapsule, {
-                key: 'modeldock',
-                sessionId,
-                models,
-                sessions: sessionsService,
-                t,
-                locked: false,
               })
             : null,
         );
