@@ -637,7 +637,7 @@
         if (nodes && typeof nodes.get === 'function') {
           for (const key of order) {
             const node = nodes.get(key);
-            if (node?.kind !== 'tool' || !node.data?.root) continue;
+            if (node?.kind !== 'tool-call' || !node.data?.root) continue;
             const row = toolRowOf(key, node.data.root);
             if (row !== null) {
               if (runs === EMPTY) runs = [];
