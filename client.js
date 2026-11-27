@@ -315,11 +315,14 @@
     // ---- 模型选择座位：ZCode 风格双栏（provider 列 + 模型列），底部堆叠推理等级与团队开关 ----
     // 结构教训：foot/teamrow 曾经是 .dsc-modelpop（flex 行）的直接子元素，被两列挤到
     // 零宽——滑杆「消失」就是这个原因。现在两列包进 -cols 行，底部区域纵向堆叠占满整行。
-    '.dsc-popover--wide{min-width:min(320px,100vw - 24px);max-width:min(460px,100vw - 24px)}',
+    '.dsc-popover--wide{min-width:min(300px,100vw - 24px);max-width:min(460px,100vw - 24px)}',
     '.dsc-modelpop{display:flex;flex-direction:column;gap:1px;box-sizing:border-box;padding:3px}',
     '.dsc-modelpop-cols{display:flex;gap:6px;align-items:stretch;min-height:0}',
     '.dsc-modelpop-side{flex:none;width:128px;max-height:min(280px,38dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    // 模型列按最宽行收紧（width:max-content）；行自身放开 100% 宽，
+    // 由列的 flex stretch 对齐——短名字后面不再拖一长段空白。
     '.dsc-modelpop-main{flex:0 1 auto;width:max-content;max-width:100%;min-width:0;max-height:min(280px,38dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-modelpop-main .dsc-mrow{width:auto}',
     '.dsc-mrow{box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;min-height:28px;margin:0;padding:3px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;line-height:19px;text-align:left;cursor:pointer}',
     '@media(hover:hover){.dsc-mrow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
     '.dsc-mrow[aria-checked=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);font-weight:500}',
