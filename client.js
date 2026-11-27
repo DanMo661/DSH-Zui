@@ -74,6 +74,8 @@
       'mode.unknown': '模式未知',
       'directory.subagent': '子智能体目录',
       'directory.workflow': '工作流目录',
+  'directory.commands': '命令目录',
+  'directory.more': '更早的 {count} 条未列出',
       'directory.back': '返回',
       'directory.loading': '正在加载…',
       'directory.empty': '这里还没有子智能体',
@@ -152,6 +154,8 @@
       'mode.unknown': 'unknown mode',
       'directory.subagent': 'Subagent directory',
       'directory.workflow': 'Workflow directory',
+  'directory.commands': 'Command directory',
+  'directory.more': '{count} earlier entries not shown',
       'directory.back': 'Back',
       'directory.loading': 'Loading…',
       'directory.empty': 'No subagents yet',
@@ -405,6 +409,8 @@
     '.dsc-switch-knob{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s ease}',
     '.dsc-switch[aria-checked=true] .dsc-switch-knob{transform:translateX(16px)}',
     '.dsc-switch:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
+    // ---- 命令目录徽标（>_ 终端符）----
+    '.dsc-cmd-glyph{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font:600 9px/16px ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
   ].join('');
@@ -581,6 +587,65 @@
           }
         }
         runCache?.set(chat, runs);
+        return runs;
+      }
+
+      const toolCache = typeof WeakMap === 'function' ? new WeakMap() : null;
+
+      /** 根工具调用的展示行：{ id, name, running, detail }。容错读取，形状不稳就降级为空。 */
+      function toolRowOf(key, root) {
+        if (!root || typeof root !== 'object') return null;
+        const running = root.kind !== 'tool-result';
+        const call = root.call && typeof root.call === 'object' ? root.call : root;
+        const name = typeof call.name === 'string' && call.name !== '' ? call.name : 'tool';
+        let raw = typeof call.argsRaw === 'string' ? call.argsRaw : (typeof call.arguments === 'string' ? call.arguments : '');
+        let detail = '';
+        if (raw !== '') {
+          try {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed === 'string') detail = parsed;
+            else if (parsed && typeof parsed === 'object') {
+              const hit = parsed.command ?? parsed.cmd ?? parsed.prompt ?? parsed.description ?? parsed.path ?? parsed.file_path ?? parsed.pattern ?? parsed.query;
+              if (typeof hit === 'string') detail = hit;
+              else if (parsed.arguments && typeof parsed.arguments === 'object') {
+                const inner = parsed.arguments.command ?? parsed.arguments.prompt;
+                if (typeof inner === 'string') detail = inner;
+              }
+            }
+          } catch (error) {
+            detail = raw;
+          }
+        }
+        detail = detail.replace(/\s+/g, ' ').trim().slice(0, 90);
+        return { id: String(key), name, running, detail };
+      }
+
+      /** 对话快照里的根工具调用（运行命令）：运行中 + 已完成的按时间顺序。按快照身份缓存。 */
+      function selectToolRuns(value) {
+        let chat;
+        try {
+          chat = value?.views?.get?.('chat');
+        } catch (error) {
+          chat = undefined;
+        }
+        if (!chat || typeof chat !== 'object') return EMPTY;
+        const cached = toolCache?.get(chat);
+        if (cached) return cached;
+        const order = Array.isArray(chat.order) ? chat.order : EMPTY;
+        const nodes = chat.nodes;
+        let runs = EMPTY;
+        if (nodes && typeof nodes.get === 'function') {
+          for (const key of order) {
+            const node = nodes.get(key);
+            if (node?.kind !== 'tool' || !node.data?.root) continue;
+            const row = toolRowOf(key, node.data.root);
+            if (row !== null) {
+              if (runs === EMPTY) runs = [];
+              runs.push(row);
+            }
+          }
+        }
+        toolCache?.set(chat, runs);
         return runs;
       }
 
@@ -1245,6 +1310,9 @@
         const [open, setOpen] = useState(false);
         const [providerId, setProviderId] = useState(null);
         const [errorText, setErrorText] = useState(null);
+        // 拖动滑杆时的临时档位：onChange 只改视觉，pointerup/按键才真正提交，
+        // 提交成功不关面板（方便连续比较档位），失败回弹到快照档位。
+        const [pendingEffort, setPendingEffort] = useState(null);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
@@ -1286,6 +1354,16 @@
           ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
         ];
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
+        const baseEffortIndex = Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort));
+        const effIndex = pendingEffort ?? baseEffortIndex;
+        const effNameShown = effortPills[effIndex] ? effortPills[effIndex].label : effortName;
+        // 快照回填到拖动档位后清掉临时态；面板关闭时复位。
+        useEffect(() => {
+          if (pendingEffort !== null && pendingEffort === baseEffortIndex) setPendingEffort(null);
+        }, [pendingEffort, baseEffortIndex]);
+        useEffect(() => {
+          if (!open) setPendingEffort(null);
+        }, [open]);
 
         if (!available || !directory) return null;
 
@@ -1308,14 +1386,16 @@
           );
         };
 
-        const submit = (selection) => {
+        const submit = (selection, options) => {
           void Promise.resolve(select(selection)).then((result) => {
             if (result && result.ok === false) {
               const code = result.error ? result.error.code : '';
               const message = result.error ? code + ': ' + result.error.message : 'unknown';
               showError(code === 'session/writer-held' ? t('model.sessionInUse') : t('model.error', { message }));
+              if (options && typeof options.onFail === 'function') options.onFail();
             } else if (result && result.ok) {
-              close();
+              // 推理等级调整是「拖动比较档位」的主要交互，保持面板打开；只有换模型才收起。
+              if (!(options && options.keepOpen)) close();
             }
           });
         };
@@ -1328,11 +1408,7 @@
         };
         const chooseEffort = (effort) => {
           if (!current) return;
-          if (effectiveEffort === effort) {
-            close();
-            return;
-          }
-          submit({ provider: current.provider, model: current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) });
+          submit({ provider: current.provider, model: current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true, onFail: () => setPendingEffort(null) });
         };
         const retry = () => {
           if (load) load();
@@ -1457,15 +1533,16 @@
                     { className: 'dsc-modelpop-foot' },
                     h('div', { className: 'dsc-modelpop-efforthead' },
                       h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                      h('span', { className: 'dsc-modelpop-effortvalue' }, effortName ?? '')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, effNameShown ?? '')),
                     effortPills.length > 1
                       ? h(EffortSlider, {
                           levels: effortPills,
-                          valueIndex: Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort)),
-                          onPick: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
+                          valueIndex: effIndex,
+                          onPreview: (index) => setPendingEffort(index),
+                          onCommit: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
                           disabled: busy || !current,
                           ariaLabel: t('model.effort'),
-                          valueName: effortName,
+                          valueName: effNameShown,
                           highspeed: isHighspeedModel(currentModel),
                         })
                       : null,
@@ -1556,14 +1633,19 @@
       /**
        * 思考强度滑杆——ZCode composer-thought-slider 移植（紧凑档：28px 交互区、14px 轨道、22px 滑块）。
        * 视觉层（轨道/填充/圆点/滑块/气泡）aria-hidden，交互交给原生 range；
+       * 拖动过程 onChange→onPreview（只改视觉），松手/方向键 onPointerUp/onKeyUp→onCommit（提交），
+       * 这样拖动不触发一串提交 RPC，也不会中途关面板。
        * 气泡外层满宽做位移（104%→-4% 相对满宽）、内层白色圆点，top 映射进 14px 轨道；
        * 渐变只在最高档淡入；GLM FlashX/Highspeed 走蓝→紫变体。
        */
-      function EffortSlider({ levels, valueIndex, onPick, disabled, ariaLabel, valueName, highspeed }) {
+      function EffortSlider({ levels, valueIndex, onPreview, onCommit, disabled, ariaLabel, valueName, highspeed }) {
         const frac = levels.length > 1 ? valueIndex / (levels.length - 1) : 0;
         const atMax = valueIndex === levels.length - 1;
         const off = disabled ?? false;
         const filled = !off;
+        const commit = (event) => {
+          if (typeof onCommit === 'function') onCommit(Number(event.target.value));
+        };
         return h('div', { className: 'dsc-slider', 'data-disabled': off ? 'true' : undefined },
           h('div', { key: 'visual', className: 'dsc-slider-visual', 'aria-hidden': true },
             h('div', { className: 'dsc-slider-track' },
@@ -1610,7 +1692,11 @@
             'aria-label': ariaLabel,
             'aria-valuetext': valueName,
             disabled: off,
-            onChange: (event) => onPick(Number(event.target.value)),
+            onChange: (event) => {
+              if (typeof onPreview === 'function') onPreview(Number(event.target.value));
+            },
+            onPointerUp: commit,
+            onKeyUp: commit,
           }),
         );
       }
@@ -1640,6 +1726,7 @@
         const [providerId, setProviderId] = useState(null);
         const [errorText, setErrorText] = useState(null);
         const [teamPending, setTeamPending] = useState(false);
+        const [pendingEffort, setPendingEffort] = useState(null);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
@@ -1665,18 +1752,29 @@
         const triggerLabel = vm.effortName ? modelLabel + ' · ' + vm.effortName : modelLabel;
         const aria = vm.effortName ? t('model.ariaEffort', { model: modelLabel, effort: vm.effortName }) : t('model.aria', { model: modelLabel });
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
+        const baseEffortIndex = Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort));
+        const effIndex = pendingEffort ?? baseEffortIndex;
+        const effNameShown = vm.effortPills[effIndex] ? vm.effortPills[effIndex].label : vm.effortName;
+        useEffect(() => {
+          if (pendingEffort !== null && pendingEffort === baseEffortIndex) setPendingEffort(null);
+        }, [pendingEffort, baseEffortIndex]);
+        useEffect(() => {
+          if (!open) setPendingEffort(null);
+        }, [open]);
         const activeId = providerId ?? (vm.current ? vm.current.provider : null) ?? (vm.ordered[0] ? vm.ordered[0].id : null);
         const activeGroup = vm.ordered.find((group) => group.id === activeId) ?? vm.ordered[0] ?? null;
         const badgeFor = (model) => (model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(null, model.badge.text)) : null);
         if (!directory || !controller || addressed) return null;
-        const submit = (selection) => {
+        const submit = (selection, options) => {
           void Promise.resolve(controller.select(selection)).then((result) => {
             if (result && result.ok === false) {
               const code = result.error ? result.error.code : '';
               const message = result.error ? code + ': ' + result.error.message : 'unknown';
               showError(code === 'session/writer-held' ? t('model.sessionInUse') : t('model.error', { message }));
+              if (options && typeof options.onFail === 'function') options.onFail();
             } else if (result && result.ok) {
-              close();
+              // 推理等级调整保持面板打开（见座位侧同名逻辑）；只有换模型才收起。
+              if (!(options && options.keepOpen)) close();
             }
           });
         };
@@ -1689,11 +1787,7 @@
         };
         const chooseEffort = (effort) => {
           if (!vm.current) return;
-          if (vm.effectiveEffort === effort) {
-            close();
-            return;
-          }
-          submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) });
+          submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true, onFail: () => setPendingEffort(null) });
         };
         const retry = () => controller.load().catch(() => { /* 面板内呈现 */ });
         const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
@@ -1808,15 +1902,16 @@
                     { className: 'dsc-modelpop-foot' },
                     h('div', { className: 'dsc-modelpop-efforthead' },
                       h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                      h('span', { className: 'dsc-modelpop-effortvalue' }, vm.effortName ?? '')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, effNameShown ?? '')),
                     vm.effortPills.length > 1
                       ? h(EffortSlider, {
                           levels: vm.effortPills,
-                          valueIndex: Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort)),
-                          onPick: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
+                          valueIndex: effIndex,
+                          onPreview: (index) => setPendingEffort(index),
+                          onCommit: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
                           disabled: busy || !vm.current,
                           ariaLabel: t('model.effort'),
-                          valueName: vm.effortName,
+                          valueName: effNameShown,
                           highspeed: isHighspeedModel(vm.currentModel),
                         })
                       : null,
@@ -2051,7 +2146,44 @@
         );
       }
 
-      function ActivityCapsule({ sessionId, children, liveJobs, settledJobs, workflowRuns, projections, summaries, statuses, jobs, open, onToggle, onClose, actions, t }) {
+      /** 命令目录：会话里的根工具调用（运行命令），只显示最近 7 条，不做滚动。 */
+      function CommandDirectory({ runs, onBack, t }) {
+        const shown = runs.slice(-7);
+        const hidden = runs.length - shown.length;
+        return h(
+          'div',
+          { key: 'commands' },
+          h(
+            'div',
+            { className: 'dsc-head' },
+            h('button', { type: 'button', className: 'dsc-back', 'aria-label': t('directory.back'), onClick: onBack }, ICON.chevronLeft()),
+            h('span', { className: 'dsc-title' }, t('directory.commands')),
+            h('span', { className: 'dsc-count', style: { marginLeft: 'auto' } }, runs.length),
+          ),
+          hidden > 0 ? h('div', { className: 'dsc-empty' }, t('directory.more', { count: hidden })) : null,
+          shown.length === 0
+            ? h('div', { className: 'dsc-empty' }, t('directory.empty'))
+            : h(
+                'ul',
+                { className: 'dsc-list' },
+                shown.map((run) =>
+                  h(
+                    'li',
+                    { key: run.id, className: 'dsc-item', 'data-state': run.running ? 'running' : 'done' },
+                    h('span', { className: 'dsc-glyph' }, h('span', { className: 'dsc-lamp dsc-lamp--' + (run.running ? 'ongoing' : 'done'), 'aria-hidden': true })),
+                    h(
+                      'span',
+                      { className: 'dsc-main' },
+                      h('span', { className: 'dsc-title', title: run.name }, run.name),
+                      run.detail !== '' ? h('span', { className: 'dsc-sub', title: run.detail }, run.detail) : null,
+                    ),
+                  ),
+                ),
+              ),
+        );
+      }
+
+      function ActivityCapsule({ sessionId, children, liveJobs, settledJobs, workflowRuns, toolRuns, projections, summaries, statuses, jobs, open, onToggle, onClose, actions, t }) {
         const anchorRef = useRef(null);
         const [view, setView] = useState('root');
         const [expanded, setExpanded] = useState(() => new Set());
@@ -2071,7 +2203,8 @@
         const ended = children
           .filter((agent) => !agent.running)
           .sort((left, right) => right.createdAt - left.createdAt);
-        const avatars = pickAvatars(children);
+        // 头像条只给活跃中的子智能体：跑完的不占格子（用户要求：活跃几个亮几个）。
+        const avatars = pickAvatars(running.length > 0 ? running : children);
         // 计数：运行中 = 在跑的智能体 / 后台任务 / 工作流；空闲时 = 各类总量之和
         // （名册常驻后这就是本会话各自用了多少个）。
         const runningCount = running.length + liveJobs.length + activeRuns.length;
@@ -2119,6 +2252,8 @@
           });
         } else if (view === 'workflows') {
           body = h(WorkflowDirectory, { runs: workflowRuns, onBack: () => switchView('root'), t });
+        } else if (view === 'commands') {
+          body = h(CommandDirectory, { runs: toolRuns, onBack: () => switchView('root'), t });
         } else {
           const sections = [];
           // 任务完成后的用量小结（「各自用了多少个」）。
@@ -2132,15 +2267,19 @@
             sections.push(h('ul', { key: 'jobs', className: 'dsc-list' }, liveJobs.map((job) => h(JobRow, { key: String(job.id), job, sessionId, service: jobs, now, t }))));
           }
           // 已结束：最新的在前；后台任务同理常驻（顺排展示）。
-          if (ended.length > 0) {
-            sections.push(h('ul', { key: 'ended', className: 'dsc-list' }, ended.map((agent) => h(AgentRow, { key: agent.id, agent, now, onOpen: canNavigate ? openChild : undefined, t }))));
+          // 名册封顶 7 行：活着的全展示，剩下的名额给最近结束的，超出部分不渲染也不滚动。
+          let budget = Math.max(0, 7 - running.length - liveJobs.length);
+          const endedShown = ended.slice(0, budget);
+          budget -= endedShown.length;
+          if (endedShown.length > 0) {
+            sections.push(h('ul', { key: 'ended', className: 'dsc-list' }, endedShown.map((agent) => h(AgentRow, { key: agent.id, agent, now, onOpen: canNavigate ? openChild : undefined, t }))));
           }
-          const settledJobsView = settledJobs.length > 0 && jobs
-            ? h('ul', { key: 'settled', className: 'dsc-list' }, settledJobs.slice().reverse().map((job) => h(JobRow, { key: String(job.id), job, sessionId, service: jobs, now, t })))
+          const settledJobsView = settledJobs.length > 0 && jobs && budget > 0
+            ? h('ul', { key: 'settled', className: 'dsc-list' }, settledJobs.slice().reverse().slice(0, budget).map((job) => h(JobRow, { key: String(job.id), job, sessionId, service: jobs, now, t })))
             : null;
           if (settledJobsView) sections.push(settledJobsView);
           if (sections.length > 0) body = h('div', { key: 'root' }, sections);
-          if ((children.length > 0 && canNavigate) || workflowRuns.length > 0) {
+          if ((children.length > 0 && canNavigate) || workflowRuns.length > 0 || toolRuns.length > 0) {
             directories = h(
               'div',
               { key: 'directories' },
@@ -2150,6 +2289,9 @@
                 : null,
               workflowRuns.length > 0
                 ? h(DirectoryRow, { icon: ICON.workflow(), label: t('directory.workflow'), count: workflowRuns.length, onOpen: () => switchView('workflows'), kind: 'workflows' })
+                : null,
+              toolRuns.length > 0
+                ? h(DirectoryRow, { icon: h('span', { className: 'dsc-cmd-glyph' }, '>_'), label: t('directory.commands'), count: toolRuns.length, onOpen: () => switchView('commands'), kind: 'commands' })
                 : null,
             );
           }
@@ -2270,17 +2412,20 @@
         const summaries = useSessions(selectById);
         const statuses = useSessionStatus(selectSelf);
         const workflowRuns = useConversation(selectWorkflowRuns);
+        const toolRuns = useConversation(selectToolRuns);
         const jobRows = useJobRows(jobs, sessionId);
         const children = useMemo(() => buildChildren(projections?.[sessionId], summaries, statuses), [projections, summaries, statuses, sessionId]);
         const liveJobs = useMemo(() => jobRows.filter(isLiveJob), [jobRows]);
-        const settledJobs = useMemo(() => jobRows.filter((job) => !isLiveJob(job)), [jobRows]);
+        const settledJobs = useMemo(() => (Array.isArray(jobRows) ? jobRows.filter((job) => !isLiveJob(job)) : EMPTY), [jobRows]);
         const todos = Array.isArray(todoValue) ? todoValue : EMPTY;
         const [openId, setOpenId] = useState(null);
         const toggle = useCallback((id) => setOpenId((current) => (current === id ? null : id)), []);
         const close = useCallback(() => setOpenId(null), []);
         const showTodo = todos.length > 0 || openId === 'todo';
         // 常驻：跑完的子智能体 / 后台任务也让胶囊留着（列表里变成「已完成」态）。
-        const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || openId === 'activity';
+        // 运行中的命令（根工具调用）同样点亮胶囊；已完成的命令不占胶囊，只在命令目录里。
+        const runningCommands = toolRuns.filter((run) => run.running);
+        const showActivity = children.length > 0 || jobRows.length > 0 || workflowRuns.length > 0 || runningCommands.length > 0 || openId === 'activity';
         // 打开期间不因数据瞬空强制关闭：待办被模型清空时浮层显示空态，由用户自行收起。
         if (!showTodo && !showActivity) return null;
         return h(
@@ -2295,6 +2440,7 @@
                 liveJobs,
                 settledJobs,
                 workflowRuns,
+                toolRuns,
                 projections,
                 summaries,
                 statuses,
