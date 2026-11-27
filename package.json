@@ -1,6 +1,6 @@
 {
   "name": "dsh-pulse",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "DSH-Zui · ZCode 风格的 DSH 界面增强：模型选择双栏面板 + 思考强度滑杆（渐变/气泡/档位动画，ZCode 开源移植）+ 智能体团队协作开关 + 会话状态胶囊栏（待办胶囊、智能体活动胶囊、子智能体实时卡片）。 A ZCode-style UI pack for DSH: two-pane model picker with the thought-effort slider, agent-team switch, and a status capsule row with live subagent cards.",
   "keywords": [
     "dsh",
