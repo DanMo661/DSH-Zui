@@ -315,21 +315,19 @@
     // ---- 模型选择座位：ZCode 风格双栏（provider 列 + 模型列），底部堆叠推理等级与团队开关 ----
     // 结构教训：foot/teamrow 曾经是 .dsc-modelpop（flex 行）的直接子元素，被两列挤到
     // 零宽——滑杆「消失」就是这个原因。现在两列包进 -cols 行，底部区域纵向堆叠占满整行。
-    '.dsc-popover--wide{min-width:min(500px,100vw - 24px);max-width:min(640px,100vw - 24px)}',
-    '.dsc-modelpop{display:flex;flex-direction:column;gap:2px;box-sizing:border-box;padding:4px}',
-    '.dsc-modelpop-cols{display:flex;gap:8px;align-items:stretch;min-height:0}',
-    '.dsc-modelpop-side{flex:none;width:170px;max-height:min(300px,40dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
-    '.dsc-modelpop-main{flex:1;min-width:0;max-height:min(300px,40dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
-    '.dsc-mrow{box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;min-height:30px;margin:0;padding:4px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;line-height:20px;text-align:left;cursor:pointer}',
+    '.dsc-popover--wide{min-width:min(420px,100vw - 24px);max-width:min(520px,100vw - 24px)}',
+    '.dsc-modelpop{display:flex;flex-direction:column;gap:1px;box-sizing:border-box;padding:3px}',
+    '.dsc-modelpop-cols{display:flex;gap:6px;align-items:stretch;min-height:0}',
+    '.dsc-modelpop-side{flex:none;width:150px;max-height:min(280px,38dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-modelpop-main{flex:1;min-width:0;max-height:min(280px,38dvh);overflow:hidden auto;display:flex;flex-direction:column;gap:1px}',
+    '.dsc-mrow{box-sizing:border-box;display:flex;align-items:center;gap:6px;width:100%;min-height:28px;margin:0;padding:3px 8px;border:0;border-radius:var(--dsw-radius-md);background:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;line-height:19px;text-align:left;cursor:pointer}',
     '@media(hover:hover){.dsc-mrow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}',
     '.dsc-mrow[aria-checked=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);font-weight:500}',
     '.dsc-mrow[disabled]{opacity:.55;cursor:default}',
     '.dsc-mrow-copy{flex:1;min-width:0;display:flex;align-items:center;gap:6px;overflow:hidden}',
     '.dsc-mrow-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    // provider 行：名称在上、模型数在下——横排时「DeepSeek 账号」会被计数挤成省略号。
-    '.dsc-mrow--stack{gap:2px}',
-    '.dsc-mrow--stack .dsc-mrow-copy{flex-direction:column;align-items:flex-start;gap:1px}',
-    '.dsc-mrow-count{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:15px}',
+    '.dsc-mrow-count{flex:none;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:14px}',
+    '.dsc-mrow-copy .dsc-mrow-count{margin-left:auto}',
     '.dsc-mrow-check{flex:none;display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;color:var(--dsw-alias-state-success-primary)}',
     '.dsc-mrow-check svg{width:14px;height:14px}',
     '.dsc-badge{flex:none;display:inline-flex;align-items:center;padding:0 6px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:11px;font-weight:400;line-height:18px}',
@@ -337,7 +335,7 @@
     '.dsc-badge[data-tone=info],.dsc-badge[data-tone=brand]{color:var(--dsw-alias-brand-primary)}',
     '.dsc-badge[data-tone=warning]{color:var(--dsw-alias-state-warning-primary)}',
     // 底部区：标题行（推理等级 | 当前值）+ 滑杆，整行占满（ZCode ComposerEffortHeading 布局）。
-    '.dsc-modelpop-foot{flex:none;display:flex;flex-direction:column;gap:4px;margin-top:4px;padding:8px 6px 2px;border-top:0.5px solid var(--dsw-alias-border-l1)}',
+    '.dsc-modelpop-foot{flex:none;display:flex;flex-direction:column;gap:3px;margin-top:3px;padding:6px 6px 0;border-top:0.5px solid var(--dsw-alias-border-l1)}',
     '.dsc-modelpop-efforthead{display:flex;align-items:center;gap:8px;min-width:0}',
     '.dsc-modelpop-footlabel{flex:none;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:16px}',
     '.dsc-modelpop-effortvalue{flex:none;margin-left:auto;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-primary);font-size:12px;line-height:16px;font-weight:500}',
@@ -366,14 +364,14 @@
     // ---- 以它为稳定选择器；仅当本插件的 dock 模型胶囊已挂载（body 标记类）时隐藏，
     // ---- 插件不在/卸载后原版座位自动恢复，功能不丢。
     'body.dsc-has-model-picker button[style*="--dsh-model-anchor"]{display:none !important}',
-    // ---- 思考强度滑杆（ZCode composer-thought-slider 1:1 移植）----
-    // 几何：32px 容器内 24px 高轨道（top 4px）、白色 28px 滑块（top 2px）、
-    // 填充宽 calc(14px + (100%-28px)*进度) 保证首尾档对齐档位圆点。
-    '.dsc-slider{position:relative;height:32px;border-radius:999px}',
+    // ---- 思考强度滑杆（ZCode composer-thought-slider 移植，紧凑档）----
+    // 几何：28px 容器内 14px 高轨道（top 7px）、白色 22px 滑块（top 3px）、
+    // 填充宽 calc(11px + (100%-22px)*进度) 保证首尾档对齐档位圆点。
+    '.dsc-slider{position:relative;height:28px;border-radius:999px}',
     '.dsc-slider[data-disabled=true]{opacity:.5}',
     '.dsc-slider[data-disabled=true] .dsc-slider-range{cursor:default}',
     '.dsc-slider-visual{position:absolute;inset:0;border-radius:inherit;pointer-events:none}',
-    '.dsc-slider-track{position:absolute;left:0;right:0;top:4px;height:24px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.18));box-shadow:inset 0 0 0 0.5px var(--dsw-alias-border-l1,rgba(127,127,127,.25));overflow:hidden}',
+    '.dsc-slider-track{position:absolute;left:0;right:0;top:7px;height:14px;border-radius:999px;background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.18));box-shadow:inset 0 0 0 0.5px var(--dsw-alias-border-l1,rgba(127,127,127,.25));overflow:hidden}',
     '.dsc-slider-fill{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:var(--dsw-alias-state-success-primary,#22c55e);transition:width 120ms ease-out}',
     // 纯色→渐变不能直接插值：常驻渐变层只在最高档淡入（沿 oklch 较短色相路径经青色）。
     '.dsc-slider-fill::before{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity 200ms ease-out;background:linear-gradient(270deg in oklch shorter hue,var(--dsw-alias-brand-primary,#3b82f6) 0%,var(--dsw-alias-state-success-primary,#22c55e) 100%)}',
@@ -386,23 +384,23 @@
     '.dsc-slider-bubble{position:absolute;left:0;right:0;opacity:0;animation:dsc-bubble-flow linear infinite}',
     '.dsc-slider-dot{display:block;border-radius:50%;background:#fff}',
     '@keyframes dsc-bubble-flow{0%{transform:translateX(104%);opacity:0}15%,80%{opacity:.4}100%{transform:translateX(-4%);opacity:0}}',
-    '.dsc-slider-stops{position:absolute;left:14px;right:14px;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none}',
-    '.dsc-slider-stop{flex:none;width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-label-tertiary,rgba(127,127,127,.7));transition:background 120ms ease-out,opacity 120ms ease-out}',
+    '.dsc-slider-stops{position:absolute;left:11px;right:11px;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none}',
+    '.dsc-slider-stop{flex:none;width:3px;height:3px;border-radius:50%;background:var(--dsw-alias-label-tertiary,rgba(127,127,127,.7));transition:background 120ms ease-out,opacity 120ms ease-out}',
     '.dsc-slider-stop[data-filled=true]{background:#fff;opacity:.4}',
-    '.dsc-slider-thumb{position:absolute;top:2px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:left 120ms ease-out}',
+    '.dsc-slider-thumb{position:absolute;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left 120ms ease-out}',
     '.dsc-slider-range{position:absolute;inset:0;margin:0;width:100%;height:100%;appearance:none;-webkit-appearance:none;background:transparent;outline:none;cursor:pointer}',
-    '.dsc-slider-range::-webkit-slider-runnable-track{height:32px;background:transparent}',
-    '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:28px;height:28px;border:0;border-radius:50%;background:transparent}',
+    '.dsc-slider-range::-webkit-slider-runnable-track{height:28px;background:transparent}',
+    '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:0;border-radius:50%;background:transparent}',
     '.dsc-slider:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:2px}',
     '@media (prefers-reduced-motion:reduce){.dsc-slider-bubbles{display:none}.dsc-slider-fill,.dsc-slider-fill::before,.dsc-slider-thumb,.dsc-slider-stop{transition:none}}',
     // ---- 团队协作开关行（面板底部，推理等级之下）----
-    '.dsc-teamrow{flex:none;display:flex;align-items:center;gap:8px;min-width:0;margin-top:4px;padding:8px 6px 2px;border-top:0.5px solid var(--dsw-alias-border-l1)}',
+    '.dsc-teamrow{flex:none;display:flex;align-items:center;gap:8px;min-width:0;margin-top:3px;padding:6px 6px 0;border-top:0.5px solid var(--dsw-alias-border-l1)}',
     '.dsc-teamrow-label{flex:1;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary)}',
-    '.dsc-switch{flex:none;position:relative;display:inline-flex;align-items:center;width:40px;height:22px;padding:0;border:0;border-radius:999px;background:var(--dsw-alias-border-l2,rgba(127,127,127,.35));cursor:pointer;transition:background .15s ease}',
+    '.dsc-switch{flex:none;position:relative;display:inline-flex;align-items:center;width:36px;height:20px;padding:0;border:0;border-radius:999px;background:var(--dsw-alias-border-l2,rgba(127,127,127,.35));cursor:pointer;transition:background .15s ease}',
     '.dsc-switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}',
     '.dsc-switch:disabled{opacity:.5;cursor:default}',
-    '.dsc-switch-knob{position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s ease}',
-    '.dsc-switch[aria-checked=true] .dsc-switch-knob{transform:translateX(18px)}',
+    '.dsc-switch-knob{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s ease}',
+    '.dsc-switch[aria-checked=true] .dsc-switch-knob{transform:translateX(16px)}',
     '.dsc-switch:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
     // ---- 焦点 ----
     '.dsc-capsule:focus-visible,.dsc-item-hit:focus-visible,.dsc-item--clickable:focus-visible,.dsc-back:focus-visible,.dsc-stop:focus-visible,.dsc-chevron:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:1px}',
@@ -1388,7 +1386,7 @@
                       {
                         key: group.id,
                         type: 'button',
-                        className: 'dsc-mrow dsc-mrow--stack',
+                        className: 'dsc-mrow',
                         role: 'option',
                         'aria-checked': activeGroup ? group.id === activeGroup.id : false,
                         disabled: busy,
@@ -1554,9 +1552,9 @@
       ];
 
       /**
-       * 思考强度滑杆——ZCode composer-thought-slider 1:1 移植。
+       * 思考强度滑杆——ZCode composer-thought-slider 移植（紧凑档：28px 交互区、14px 轨道、22px 滑块）。
        * 视觉层（轨道/填充/圆点/滑块/气泡）aria-hidden，交互交给原生 range；
-       * 气泡外层满宽做位移（104%→-4% 相对满宽）、内层白色圆点；
+       * 气泡外层满宽做位移（104%→-4% 相对满宽）、内层白色圆点，top 映射进 14px 轨道；
        * 渐变只在最高档淡入；GLM FlashX/Highspeed 走蓝→紫变体。
        */
       function EffortSlider({ levels, valueIndex, onPick, disabled, ariaLabel, valueName, highspeed }) {
@@ -1571,7 +1569,7 @@
                 className: 'dsc-slider-fill',
                 'data-max': filled && atMax ? 'true' : undefined,
                 'data-highspeed': filled && atMax && highspeed ? 'true' : undefined,
-                style: { width: 'calc(14px + (100% - 28px) * ' + frac + ')' },
+                style: { width: 'calc(11px + (100% - 22px) * ' + frac + ')' },
               },
                 filled && atMax
                   ? h('div', { className: 'dsc-slider-bubbles' },
@@ -1580,12 +1578,12 @@
                           key: index,
                           className: 'dsc-slider-bubble',
                           style: {
-                            top: bubble.top + 'px',
-                            height: bubble.size + 'px',
+                            top: Math.min(9, Math.round(4 + bubble.top * 0.33)) + 'px',
+                            height: Math.min(3, bubble.size) + 'px',
                             animationDuration: bubble.duration + 's',
                             animationDelay: bubble.delay + 's',
                           },
-                        }, h('span', { className: 'dsc-slider-dot', style: { width: bubble.size + 'px', height: bubble.size + 'px' } }))),
+                        }, h('span', { className: 'dsc-slider-dot', style: { width: Math.min(3, bubble.size) + 'px', height: Math.min(3, bubble.size) + 'px' } }))),
                     )
                   : null,
               ),
@@ -1598,7 +1596,7 @@
                   'data-filled': filled && index <= valueIndex ? 'true' : undefined,
                 })),
             ),
-            h('div', { className: 'dsc-slider-thumb', style: { left: 'calc((100% - 28px) * ' + frac + ')' } }),
+            h('div', { className: 'dsc-slider-thumb', style: { left: 'calc((100% - 22px) * ' + frac + ')' } }),
           ),
           h('input', {
             className: 'dsc-slider-range',
@@ -1747,7 +1745,7 @@
                       {
                         key: group.id,
                         type: 'button',
-                        className: 'dsc-mrow dsc-mrow--stack',
+                        className: 'dsc-mrow',
                         role: 'option',
                         'aria-checked': activeGroup ? group.id === activeGroup.id : false,
                         disabled: busy,
