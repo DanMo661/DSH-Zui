@@ -397,7 +397,7 @@
     '.dsc-slider-thumb{position:absolute;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left 120ms ease-out}',
     '.dsc-slider-range{position:absolute;inset:0;margin:0;width:100%;height:100%;appearance:none;-webkit-appearance:none;background:transparent;outline:none;cursor:pointer}',
     '.dsc-slider-range::-webkit-slider-runnable-track{height:28px;background:transparent}',
-    '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:0;border-radius:50%;background:transparent}',
+    '.dsc-slider-range::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:22px;height:22px;margin-top:3px;border:0;border-radius:50%;background:transparent}',
     '.dsc-slider:focus-visible{outline:1.5px solid var(--dsw-alias-brand-primary);outline-offset:2px}',
     '@media (prefers-reduced-motion:reduce){.dsc-slider-bubbles{display:none}.dsc-slider-fill,.dsc-slider-fill::before,.dsc-slider-thumb,.dsc-slider-stop{transition:none}}',
     // ---- 团队协作开关行（面板底部，推理等级之下）----
@@ -1310,9 +1310,6 @@
         const [open, setOpen] = useState(false);
         const [providerId, setProviderId] = useState(null);
         const [errorText, setErrorText] = useState(null);
-        // 拖动滑杆时的临时档位：onChange 只改视觉，pointerup/按键才真正提交，
-        // 提交成功不关面板（方便连续比较档位），失败回弹到快照档位。
-        const [pendingEffort, setPendingEffort] = useState(null);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
@@ -1354,16 +1351,6 @@
           ...reasoning.efforts.map((level) => ({ key: level.id, effort: level.id, label: level.name })),
         ];
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
-        const baseEffortIndex = Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort));
-        const effIndex = pendingEffort ?? baseEffortIndex;
-        const effNameShown = effortPills[effIndex] ? effortPills[effIndex].label : effortName;
-        // 快照回填到拖动档位后清掉临时态；面板关闭时复位。
-        useEffect(() => {
-          if (pendingEffort !== null && pendingEffort === baseEffortIndex) setPendingEffort(null);
-        }, [pendingEffort, baseEffortIndex]);
-        useEffect(() => {
-          if (!open) setPendingEffort(null);
-        }, [open]);
 
         if (!available || !directory) return null;
 
@@ -1408,7 +1395,9 @@
         };
         const chooseEffort = (effort) => {
           if (!current) return;
-          submit({ provider: current.provider, model: current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true, onFail: () => setPendingEffort(null) });
+          // 同值防抖：拖动时 onChange/pointerup 会对同一档重复触发，不重复提交。
+          if (effectiveEffort === effort) return;
+          submit({ provider: current.provider, model: current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true });
         };
         const retry = () => {
           if (load) load();
@@ -1533,16 +1522,16 @@
                     { className: 'dsc-modelpop-foot' },
                     h('div', { className: 'dsc-modelpop-efforthead' },
                       h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                      h('span', { className: 'dsc-modelpop-effortvalue' }, effNameShown ?? '')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, effortName ?? '')),
                     effortPills.length > 1
                       ? h(EffortSlider, {
                           levels: effortPills,
-                          valueIndex: effIndex,
-                          onPreview: (index) => setPendingEffort(index),
+                          valueIndex: Math.max(0, effortPills.findIndex((pill) => pill.effort === effectiveEffort)),
                           onCommit: (index) => chooseEffort(effortPills[index] ? effortPills[index].effort : undefined),
-                          disabled: busy || !current,
+                          disabled: !current,
+                          gated: busy,
                           ariaLabel: t('model.effort'),
-                          valueName: effNameShown,
+                          valueName: effortName,
                           highspeed: isHighspeedModel(currentModel),
                         })
                       : null,
@@ -1632,21 +1621,24 @@
 
       /**
        * 思考强度滑杆——ZCode composer-thought-slider 移植（紧凑档：28px 交互区、14px 轨道、22px 滑块）。
-       * 视觉层（轨道/填充/圆点/滑块/气泡）aria-hidden，交互交给原生 range；
-       * 拖动过程 onChange→onPreview（只改视觉），松手/方向键 onPointerUp/onKeyUp→onCommit（提交），
-       * 这样拖动不触发一串提交 RPC，也不会中途关面板。
+       * 交互语义照抄 ZCode 生产版：onChange 直接提交（chooseEffort 里有同值防抖），
+       * pointerup/keyup 补一次最终提交；busy 期间只用 aria-disabled + data-disabled 做门控
+       * （disabled 属性会移走焦点、打断连续拖动），pointerdown 在门控期 preventDefault 防跳档。
        * 气泡外层满宽做位移（104%→-4% 相对满宽）、内层白色圆点，top 映射进 14px 轨道；
        * 渐变只在最高档淡入；GLM FlashX/Highspeed 走蓝→紫变体。
        */
-      function EffortSlider({ levels, valueIndex, onPreview, onCommit, disabled, ariaLabel, valueName, highspeed }) {
+      function EffortSlider({ levels, valueIndex, onCommit, disabled, gated, ariaLabel, valueName, highspeed }) {
         const frac = levels.length > 1 ? valueIndex / (levels.length - 1) : 0;
         const atMax = valueIndex === levels.length - 1;
         const off = disabled ?? false;
-        const filled = !off;
+        const busy = gated ?? false;
+        const dead = off || busy;
+        const filled = !dead;
         const commit = (event) => {
+          if (busy) return;
           if (typeof onCommit === 'function') onCommit(Number(event.target.value));
         };
-        return h('div', { className: 'dsc-slider', 'data-disabled': off ? 'true' : undefined },
+        return h('div', { className: 'dsc-slider', 'data-disabled': dead ? 'true' : undefined, 'data-gated': busy ? 'true' : undefined },
           h('div', { key: 'visual', className: 'dsc-slider-visual', 'aria-hidden': true },
             h('div', { className: 'dsc-slider-track' },
               h('div', {
@@ -1692,9 +1684,11 @@
             'aria-label': ariaLabel,
             'aria-valuetext': valueName,
             disabled: off,
-            onChange: (event) => {
-              if (typeof onPreview === 'function') onPreview(Number(event.target.value));
+            'aria-disabled': busy ? 'true' : undefined,
+            onPointerDown: (event) => {
+              if (busy) event.preventDefault();
             },
+            onChange: commit,
             onPointerUp: commit,
             onKeyUp: commit,
           }),
@@ -1726,7 +1720,6 @@
         const [providerId, setProviderId] = useState(null);
         const [errorText, setErrorText] = useState(null);
         const [teamPending, setTeamPending] = useState(false);
-        const [pendingEffort, setPendingEffort] = useState(null);
         const anchorRef = useRef(null);
         const errorTimer = useRef(null);
         useEffect(() => () => clearTimeout(errorTimer.current), []);
@@ -1752,15 +1745,6 @@
         const triggerLabel = vm.effortName ? modelLabel + ' · ' + vm.effortName : modelLabel;
         const aria = vm.effortName ? t('model.ariaEffort', { model: modelLabel, effort: vm.effortName }) : t('model.aria', { model: modelLabel });
         const totalModels = state.groups.reduce((sum, group) => sum + group.models.length, 0);
-        const baseEffortIndex = Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort));
-        const effIndex = pendingEffort ?? baseEffortIndex;
-        const effNameShown = vm.effortPills[effIndex] ? vm.effortPills[effIndex].label : vm.effortName;
-        useEffect(() => {
-          if (pendingEffort !== null && pendingEffort === baseEffortIndex) setPendingEffort(null);
-        }, [pendingEffort, baseEffortIndex]);
-        useEffect(() => {
-          if (!open) setPendingEffort(null);
-        }, [open]);
         const activeId = providerId ?? (vm.current ? vm.current.provider : null) ?? (vm.ordered[0] ? vm.ordered[0].id : null);
         const activeGroup = vm.ordered.find((group) => group.id === activeId) ?? vm.ordered[0] ?? null;
         const badgeFor = (model) => (model.badge ? h('span', { className: 'dsc-badge', 'data-tone': model.badge.tone }, badgeText(null, model.badge.text)) : null);
@@ -1787,7 +1771,8 @@
         };
         const chooseEffort = (effort) => {
           if (!vm.current) return;
-          submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true, onFail: () => setPendingEffort(null) });
+          if (vm.effectiveEffort === effort) return;
+          submit({ provider: vm.current.provider, model: vm.current.model, ...(effort === undefined ? {} : { reasoningEffort: effort }) }, { keepOpen: true });
         };
         const retry = () => controller.load().catch(() => { /* 面板内呈现 */ });
         const providerName = (group) => (group.id === 'deepseek-account' ? t('model.accountProvider') : group.name);
@@ -1902,16 +1887,16 @@
                     { className: 'dsc-modelpop-foot' },
                     h('div', { className: 'dsc-modelpop-efforthead' },
                       h('span', { className: 'dsc-modelpop-footlabel' }, t('model.effort')),
-                      h('span', { className: 'dsc-modelpop-effortvalue' }, effNameShown ?? '')),
+                      h('span', { className: 'dsc-modelpop-effortvalue' }, vm.effortName ?? '')),
                     vm.effortPills.length > 1
                       ? h(EffortSlider, {
                           levels: vm.effortPills,
-                          valueIndex: effIndex,
-                          onPreview: (index) => setPendingEffort(index),
+                          valueIndex: Math.max(0, vm.effortPills.findIndex((pill) => pill.effort === vm.effectiveEffort)),
                           onCommit: (index) => chooseEffort(vm.effortPills[index] ? vm.effortPills[index].effort : undefined),
-                          disabled: busy || !vm.current,
+                          disabled: !vm.current,
+                          gated: busy,
                           ariaLabel: t('model.effort'),
-                          valueName: effNameShown,
+                          valueName: vm.effortName,
                           highspeed: isHighspeedModel(vm.currentModel),
                         })
                       : null,
